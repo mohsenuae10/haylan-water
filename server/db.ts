@@ -2,6 +2,7 @@ import { eq, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
+  appUsers, InsertAppUser,
   products, InsertProduct,
   customers, InsertCustomer,
   orders, InsertOrder,
@@ -94,6 +95,57 @@ export async function getUserByOpenId(openId: string) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
 
   return result.length > 0 ? result[0] : undefined;
+}
+
+// ============ App Users (Phone + Password Auth) ============
+
+export async function createAppUser(data: { name: string; phone: string; password: string; address?: string; role?: "customer" | "admin" }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const existing = await db.select().from(appUsers).where(eq(appUsers.phone, data.phone)).limit(1);
+  if (existing.length > 0) {
+    throw new Error("PHONE_EXISTS");
+  }
+  const [result] = await db.insert(appUsers).values({
+    name: data.name,
+    phone: data.phone,
+    password: data.password,
+    address: data.address || null,
+    role: data.role || "customer",
+  });
+  return result.insertId;
+}
+
+export async function getAppUserByPhone(phone: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(appUsers).where(eq(appUsers.phone, phone)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function verifyAppUser(phone: string, password: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(appUsers).where(eq(appUsers.phone, phone)).limit(1);
+  if (result.length === 0) return undefined;
+  const user = result[0];
+  if (user.password !== password) return undefined;
+  return user;
+}
+
+export async function seedAdminUser() {
+  const db = await getDb();
+  if (!db) return;
+  const existing = await db.select().from(appUsers).where(eq(appUsers.role, "admin")).limit(1);
+  if (existing.length > 0) return;
+  await db.insert(appUsers).values({
+    name: "مدير النظام",
+    phone: "700000000",
+    password: "admin123",
+    address: "صنعاء",
+    role: "admin",
+  });
+  console.log("[Seed] Admin user created: phone=700000000, password=admin123");
 }
 
 // ============ Products ============
@@ -270,7 +322,7 @@ export async function seedProducts() {
       nameAr: "\u0645\u064a\u0627\u0647 \u0647\u064a\u0644\u0627\u0646 330 \u0645\u0644",
       size: "330ml",
       price: "150",
-      imageUrl: "https://d2xsxph8kpxj0f.cloudfront.net/100988061/e5nvExn8ER8JEKraLFKZX9/water-330ml-2MXub3SDhdjpRtLAyiUyYS.webp",
+      imageUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png",
       description: "Pure natural water, perfect for on-the-go hydration",
       descriptionAr: "\u0645\u064a\u0627\u0647 \u0637\u0628\u064a\u0639\u064a\u0629 \u0646\u0642\u064a\u0629\u060c \u0645\u062b\u0627\u0644\u064a\u0629 \u0644\u0644\u062a\u0631\u0637\u064a\u0628 \u0623\u062b\u0646\u0627\u0621 \u0627\u0644\u062a\u0646\u0642\u0644",
       isActive: true,
@@ -281,7 +333,7 @@ export async function seedProducts() {
       nameAr: "\u0645\u064a\u0627\u0647 \u0647\u064a\u0644\u0627\u0646 500 \u0645\u0644",
       size: "500ml",
       price: "200",
-      imageUrl: "https://d2xsxph8kpxj0f.cloudfront.net/100988061/e5nvExn8ER8JEKraLFKZX9/water-500ml-3Mkr5MeEt6STFKScbEzkzC.webp",
+      imageUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png",
       description: "Pure natural water, ideal daily companion",
       descriptionAr: "\u0645\u064a\u0627\u0647 \u0637\u0628\u064a\u0639\u064a\u0629 \u0646\u0642\u064a\u0629\u060c \u0631\u0641\u064a\u0642\u0643 \u0627\u0644\u064a\u0648\u0645\u064a \u0627\u0644\u0645\u062b\u0627\u0644\u064a",
       isActive: true,
@@ -292,7 +344,7 @@ export async function seedProducts() {
       nameAr: "\u0645\u064a\u0627\u0647 \u0647\u064a\u0644\u0627\u0646 750 \u0645\u0644",
       size: "750ml",
       price: "300",
-      imageUrl: "https://d2xsxph8kpxj0f.cloudfront.net/100988061/e5nvExn8ER8JEKraLFKZX9/water-750ml-hvc6BmyiYNwMK2eQTMJhjS.webp",
+      imageUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png",
       description: "Pure natural water, great for sports and activities",
       descriptionAr: "\u0645\u064a\u0627\u0647 \u0637\u0628\u064a\u0639\u064a\u0629 \u0646\u0642\u064a\u0629\u060c \u0645\u062b\u0627\u0644\u064a\u0629 \u0644\u0644\u0631\u064a\u0627\u0636\u0629 \u0648\u0627\u0644\u0623\u0646\u0634\u0637\u0629",
       isActive: true,
@@ -303,7 +355,7 @@ export async function seedProducts() {
       nameAr: "\u0645\u064a\u0627\u0647 \u0647\u064a\u0644\u0627\u0646 1.5 \u0644\u062a\u0631",
       size: "1.5L",
       price: "400",
-      imageUrl: "https://d2xsxph8kpxj0f.cloudfront.net/100988061/e5nvExn8ER8JEKraLFKZX9/water-1500ml-iLcyDqYaEnyhnMYaLWbsYS.webp",
+      imageUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png",
       description: "Pure natural water, family size for home use",
       descriptionAr: "\u0645\u064a\u0627\u0647 \u0637\u0628\u064a\u0639\u064a\u0629 \u0646\u0642\u064a\u0629\u060c \u062d\u062c\u0645 \u0639\u0627\u0626\u0644\u064a \u0644\u0644\u0627\u0633\u062a\u062e\u062f\u0627\u0645 \u0627\u0644\u0645\u0646\u0632\u0644\u064a",
       isActive: true,

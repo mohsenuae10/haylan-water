@@ -13,9 +13,11 @@ export interface CartItem {
 }
 
 export interface LocalUser {
+  id?: number;
   name: string;
   phone: string;
   address: string;
+  role: "customer" | "admin";
   isLoggedIn: boolean;
 }
 

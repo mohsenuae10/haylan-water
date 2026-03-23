@@ -1,10 +1,10 @@
-import { Text, View, TouchableOpacity, Alert } from "react-native";
+import { Text, View, TouchableOpacity, Alert, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useAppStore } from "@/lib/store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { ScrollView } from "react-native";
+import { FONT_FAMILY } from "@/lib/fonts";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -14,11 +14,18 @@ export default function ProfileScreen() {
 
   const handleLogout = () => {
     Alert.alert(
-      "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c",
-      "\u0647\u0644 \u062a\u0631\u064a\u062f \u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c\u061f",
+      "تسجيل الخروج",
+      "هل تريد تسجيل الخروج؟",
       [
-        { text: "\u0625\u0644\u063a\u0627\u0621", style: "cancel" },
-        { text: "\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c", style: "destructive", onPress: logout },
+        { text: "إلغاء", style: "cancel" },
+        {
+          text: "تسجيل الخروج",
+          style: "destructive",
+          onPress: () => {
+            logout();
+            router.replace("/(tabs)" as any);
+          },
+        },
       ]
     );
   };
@@ -26,8 +33,8 @@ export default function ProfileScreen() {
   return (
     <ScreenContainer className="px-4">
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
-        <Text className="text-2xl font-bold text-foreground text-right pt-4 pb-3">
-          {"\u062d\u0633\u0627\u0628\u064a"}
+        <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 24, color: colors.foreground, textAlign: "right", paddingTop: 16, paddingBottom: 12 }}>
+          حسابي
         </Text>
 
         {user?.isLoggedIn ? (
@@ -43,9 +50,14 @@ export default function ProfileScreen() {
             >
               <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
                 <View style={{ alignItems: "flex-end" }}>
-                  <Text style={{ color: "#fff", fontSize: 18, fontWeight: "700" }}>{user.name}</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 14, marginTop: 2 }}>{user.phone}</Text>
-                  <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 2 }}>{user.address}</Text>
+                  <Text style={{ fontFamily: FONT_FAMILY.bold, color: "#fff", fontSize: 18 }}>{user.name}</Text>
+                  <Text style={{ fontFamily: FONT_FAMILY.regular, color: "rgba(255,255,255,0.8)", fontSize: 14, marginTop: 2 }}>{user.phone}</Text>
+                  <Text style={{ fontFamily: FONT_FAMILY.regular, color: "rgba(255,255,255,0.8)", fontSize: 13, marginTop: 2 }}>{user.address}</Text>
+                  {user.role === "admin" ? (
+                    <View style={{ backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 8, paddingHorizontal: 10, paddingVertical: 3, marginTop: 6 }}>
+                      <Text style={{ fontFamily: FONT_FAMILY.semiBold, color: "#fff", fontSize: 12 }}>مسؤول</Text>
+                    </View>
+                  ) : null}
                 </View>
                 <View
                   style={{
@@ -65,16 +77,18 @@ export default function ProfileScreen() {
             {/* Menu Items */}
             <MenuItem
               icon="list.bullet"
-              label={"\u0637\u0644\u0628\u0627\u062a\u064a"}
+              label="طلباتي"
               colors={colors}
               onPress={() => router.push("/(tabs)/orders" as any)}
             />
-            <MenuItem
-              icon="shield.fill"
-              label={"\u0644\u0648\u062d\u0629 \u0627\u0644\u0625\u062f\u0627\u0631\u0629"}
-              colors={colors}
-              onPress={() => router.push("/admin" as any)}
-            />
+            {user.role === "admin" ? (
+              <MenuItem
+                icon="shield.fill"
+                label="لوحة الإدارة"
+                colors={colors}
+                onPress={() => router.push("/admin" as any)}
+              />
+            ) : null}
 
             <TouchableOpacity
               style={{
@@ -90,13 +104,13 @@ export default function ProfileScreen() {
               onPress={handleLogout}
               activeOpacity={0.7}
             >
-              <Text style={{ fontSize: 15, fontWeight: "600", color: colors.error }}>
-                {"\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062e\u0631\u0648\u062c"}
+              <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 15, color: colors.error }}>
+                تسجيل الخروج
               </Text>
             </TouchableOpacity>
           </>
         ) : (
-          <View className="flex-1 items-center justify-center" style={{ paddingTop: 60 }}>
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingTop: 60 }}>
             <View
               style={{
                 width: 80,
@@ -110,11 +124,11 @@ export default function ProfileScreen() {
             >
               <IconSymbol name="person.fill" size={40} color={colors.primary} />
             </View>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, marginBottom: 8 }}>
-              {"\u0645\u0631\u062d\u0628\u0627\u064b \u0628\u0643"}
+            <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 18, color: colors.foreground, marginBottom: 8 }}>
+              مرحباً بك
             </Text>
-            <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", marginBottom: 24, paddingHorizontal: 40 }}>
-              {"\u0633\u062c\u0644 \u062f\u062e\u0648\u0644\u0643 \u0644\u062d\u0641\u0638 \u0628\u064a\u0627\u0646\u0627\u062a\u0643 \u0648\u062a\u062a\u0628\u0639 \u0637\u0644\u0628\u0627\u062a\u0643 \u0628\u0633\u0647\u0648\u0644\u0629"}
+            <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 14, color: colors.muted, textAlign: "center", marginBottom: 24, paddingHorizontal: 40 }}>
+              سجل دخولك لحفظ بياناتك وتتبع طلباتك بسهولة
             </Text>
             <TouchableOpacity
               style={{
@@ -122,12 +136,21 @@ export default function ProfileScreen() {
                 paddingHorizontal: 40,
                 paddingVertical: 14,
                 borderRadius: 12,
+                marginBottom: 12,
               }}
               onPress={() => router.push("/login" as any)}
               activeOpacity={0.8}
             >
-              <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-                {"\u062a\u0633\u062c\u064a\u0644 \u0627\u0644\u062f\u062e\u0648\u0644"}
+              <Text style={{ fontFamily: FONT_FAMILY.bold, color: "#fff", fontSize: 16 }}>
+                تسجيل الدخول
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push("/register" as any)}
+              activeOpacity={0.8}
+            >
+              <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 14, color: colors.primary }}>
+                إنشاء حساب جديد
               </Text>
             </TouchableOpacity>
           </View>
@@ -156,7 +179,7 @@ function MenuItem({ icon, label, colors, onPress }: { icon: any; label: string; 
     >
       <IconSymbol name="chevron.right" size={18} color={colors.muted} style={{ transform: [{ scaleX: -1 }] }} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground }}>{label}</Text>
+        <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 15, color: colors.foreground }}>{label}</Text>
         <IconSymbol name={icon} size={22} color={colors.primary} />
       </View>
     </TouchableOpacity>

@@ -3,6 +3,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { FONT_FAMILY } from "@/lib/fonts";
 
 export default function OrderSuccessScreen() {
   const router = useRouter();
@@ -26,12 +27,12 @@ export default function OrderSuccessScreen() {
         <IconSymbol name="checkmark" size={50} color={colors.success} />
       </View>
 
-      <Text style={{ fontSize: 24, fontWeight: "800", color: colors.foreground, textAlign: "center" }}>
-        {"\u062a\u0645 \u0625\u0631\u0633\u0627\u0644 \u0637\u0644\u0628\u0643 \u0628\u0646\u062c\u0627\u062d!"}
+      <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 24, color: colors.foreground, textAlign: "center" }}>
+        تم إرسال طلبك بنجاح!
       </Text>
 
-      <Text style={{ fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 8, lineHeight: 22 }}>
-        {"\u0633\u064a\u062a\u0645 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639\u0643 \u0642\u0631\u064a\u0628\u0627\u064b \u0644\u062a\u0623\u0643\u064a\u062f \u0627\u0644\u0637\u0644\u0628"}
+      <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 14, color: colors.muted, textAlign: "center", marginTop: 8, lineHeight: 22 }}>
+        سيتم التواصل معك قريباً لتأكيد الطلب
       </Text>
 
       {/* Order Number */}
@@ -47,8 +48,8 @@ export default function OrderSuccessScreen() {
           borderColor: colors.border,
         }}
       >
-        <Text style={{ fontSize: 13, color: colors.muted }}>{"\u0631\u0642\u0645 \u0627\u0644\u0637\u0644\u0628"}</Text>
-        <Text style={{ fontSize: 22, fontWeight: "800", color: colors.primary, marginTop: 4 }}>
+        <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 13, color: colors.muted }}>رقم الطلب</Text>
+        <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 22, color: colors.primary, marginTop: 4 }}>
           #{orderNumber}
         </Text>
       </View>
@@ -65,8 +66,8 @@ export default function OrderSuccessScreen() {
           onPress={() => router.push(`/order-detail/${orderId}` as any)}
           activeOpacity={0.8}
         >
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-            {"\u062a\u062a\u0628\u0639 \u0627\u0644\u0637\u0644\u0628"}
+          <Text style={{ fontFamily: FONT_FAMILY.bold, color: "#fff", fontSize: 16 }}>
+            تتبع الطلب
           </Text>
         </TouchableOpacity>
 
@@ -82,8 +83,8 @@ export default function OrderSuccessScreen() {
           onPress={() => router.replace("/(tabs)" as any)}
           activeOpacity={0.8}
         >
-          <Text style={{ color: colors.foreground, fontSize: 16, fontWeight: "600" }}>
-            {"\u0627\u0644\u0639\u0648\u062f\u0629 \u0644\u0644\u0631\u0626\u064a\u0633\u064a\u0629"}
+          <Text style={{ fontFamily: FONT_FAMILY.semiBold, color: colors.foreground, fontSize: 16 }}>
+            العودة للرئيسية
           </Text>
         </TouchableOpacity>
       </View>

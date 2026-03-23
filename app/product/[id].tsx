@@ -1,4 +1,4 @@
-import { Text, View, TouchableOpacity, ActivityIndicator } from "react-native";
+import { Text, View, TouchableOpacity, ActivityIndicator, ScrollView } from "react-native";
 import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -9,7 +9,9 @@ import { useAppStore } from "@/lib/store";
 import { useState } from "react";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ScrollView } from "react-native";
+import { FONT_FAMILY } from "@/lib/fonts";
+
+const PRODUCT_IMAGE = require("@/assets/images/product-carton.png");
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -35,7 +37,7 @@ export default function ProductDetailScreen() {
   if (!product) {
     return (
       <ScreenContainer className="items-center justify-center">
-        <Text className="text-muted">{"\u0627\u0644\u0645\u0646\u062a\u062c \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f"}</Text>
+        <Text style={{ fontFamily: FONT_FAMILY.regular, color: colors.muted }}>المنتج غير موجود</Text>
       </ScreenContainer>
     );
   }
@@ -64,36 +66,36 @@ export default function ProductDetailScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {/* Product Image */}
-        <View style={{ alignItems: "center", paddingVertical: 20 }}>
+        <View style={{ alignItems: "center", paddingVertical: 20, backgroundColor: "#F0F8FF", marginHorizontal: 16, borderRadius: 20 }}>
           <Image
-            source={{ uri: product.imageUrl || "" }}
+            source={PRODUCT_IMAGE}
             style={{ width: 250, height: 250 }}
             contentFit="contain"
           />
         </View>
 
         {/* Product Info */}
-        <View style={{ paddingHorizontal: 20 }}>
-          <Text style={{ fontSize: 24, fontWeight: "800", color: colors.foreground, textAlign: "right" }}>
+        <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
+          <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 24, color: colors.foreground, textAlign: "right" }}>
             {product.nameAr}
           </Text>
-          <Text style={{ fontSize: 14, color: colors.muted, textAlign: "right", marginTop: 4 }}>
+          <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 14, color: colors.muted, textAlign: "right", marginTop: 4 }}>
             {product.size}
           </Text>
-          <Text style={{ fontSize: 22, fontWeight: "700", color: colors.primary, textAlign: "right", marginTop: 8 }}>
+          <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 22, color: colors.primary, textAlign: "right", marginTop: 8 }}>
             {formatPrice(product.price)}
           </Text>
 
           {product.descriptionAr && (
-            <Text style={{ fontSize: 14, color: colors.muted, textAlign: "right", marginTop: 16, lineHeight: 22 }}>
+            <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 14, color: colors.muted, textAlign: "right", marginTop: 16, lineHeight: 22 }}>
               {product.descriptionAr}
             </Text>
           )}
 
           {/* Quantity Selector */}
           <View style={{ marginTop: 24 }}>
-            <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground, textAlign: "right", marginBottom: 12 }}>
-              {"\u0627\u0644\u0643\u0645\u064a\u0629"}
+            <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 15, color: colors.foreground, textAlign: "right", marginBottom: 12 }}>
+              الكمية
             </Text>
             <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 20 }}>
               <TouchableOpacity
@@ -110,7 +112,7 @@ export default function ProductDetailScreen() {
               >
                 <IconSymbol name="plus" size={22} color="#fff" />
               </TouchableOpacity>
-              <Text style={{ fontSize: 24, fontWeight: "700", color: colors.foreground, minWidth: 40, textAlign: "center" }}>
+              <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 24, color: colors.foreground, minWidth: 40, textAlign: "center" }}>
                 {quantity}
               </Text>
               <TouchableOpacity
@@ -173,8 +175,8 @@ export default function ProductDetailScreen() {
           }}
           activeOpacity={0.8}
         >
-          <Text style={{ color: "#fff", fontSize: 16, fontWeight: "700" }}>
-            {"\u0623\u0636\u0641 \u0644\u0644\u0637\u0644\u0628 - "}{formatPrice(totalPrice)}
+          <Text style={{ fontFamily: FONT_FAMILY.bold, color: "#fff", fontSize: 16 }}>
+            {"أضف للطلب - "}{formatPrice(totalPrice)}
           </Text>
         </TouchableOpacity>
       </View>

@@ -15,6 +15,13 @@
       "when": 1774271861981,
       "tag": "0001_shiny_supreme_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1774275151219,
+      "tag": "0002_fair_shockwave",
+      "breakpoints": true
     }
   ]
 }

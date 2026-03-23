@@ -17,25 +17,28 @@ import { validateYemeniPhone } from "@/lib/validation";
 import { trpc } from "@/lib/trpc";
 import { FONT_FAMILY } from "@/lib/fonts";
 import { useColors } from "@/hooks/use-colors";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const router = useRouter();
   const { login } = useAppStore();
   const colors = useColors();
-  const insets = useSafeAreaInsets();
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<{ phone?: string; password?: string; general?: string }>({});
+  const [address, setAddress] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const loginMutation = trpc.appAuth.login.useMutation();
+  const registerMutation = trpc.appAuth.register.useMutation();
 
-  const handleLogin = async () => {
-    const newErrors: typeof errors = {};
+  const handleRegister = async () => {
+    const newErrors: Record<string, string> = {};
+    if (!name.trim()) newErrors.name = "الاسم مطلوب";
     const phoneValidation = validateYemeniPhone(phone);
     if (!phoneValidation.valid) newErrors.phone = phoneValidation.message;
     if (!password.trim()) newErrors.password = "كلمة المرور مطلوبة";
+    else if (password.trim().length < 4) newErrors.password = "كلمة المرور يجب أن تكون 4 أحرف على الأقل";
+    if (!address.trim()) newErrors.address = "العنوان مطلوب";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -43,7 +46,12 @@ export default function LoginScreen() {
     setErrors({});
     setIsLoading(true);
     try {
-      const result = await loginMutation.mutateAsync({ phone: phone.trim(), password: password.trim() });
+      const result = await registerMutation.mutateAsync({
+        name: name.trim(),
+        phone: phone.trim(),
+        password: password.trim(),
+        address: address.trim(),
+      });
       login({
         id: result.id,
         name: result.name,
@@ -52,14 +60,14 @@ export default function LoginScreen() {
         role: result.role as "customer" | "admin",
         isLoggedIn: true,
       });
-      if (result.role === "admin") {
-        router.replace("/admin" as any);
-      } else {
-        router.back();
-      }
+      router.replace("/(tabs)" as any);
     } catch (err: any) {
-      const msg = err?.message || "حدث خطأ أثناء تسجيل الدخول";
-      setErrors({ general: msg.includes("غير صحيحة") ? msg : "رقم الجوال أو كلمة المرور غير صحيحة" });
+      const msg = err?.message || "حدث خطأ أثناء إنشاء الحساب";
+      if (msg.includes("مسجل مسبقاً")) {
+        setErrors({ phone: "رقم الجوال مسجل مسبقاً" });
+      } else {
+        setErrors({ general: msg });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +89,7 @@ export default function LoginScreen() {
             {/* Header with back button */}
             <TouchableOpacity
               onPress={() => router.back()}
-              style={{ alignSelf: "flex-end", padding: 4, marginBottom: 16 }}
+              style={{ alignSelf: "flex-end", padding: 4, marginBottom: 12 }}
             >
               <Text style={{ fontFamily: FONT_FAMILY.medium, fontSize: 16, color: colors.primary }}>
                 {"رجوع →"}
@@ -89,30 +97,65 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             {/* Logo */}
-            <View style={{ alignItems: "center", marginBottom: 24 }}>
+            <View style={{ alignItems: "center", marginBottom: 20 }}>
               <Image
                 source={require("@/assets/images/haylan-logo.png")}
-                style={{ width: 180, height: 120 }}
+                style={{ width: 140, height: 90 }}
                 contentFit="contain"
               />
-              <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 24, color: colors.foreground, marginTop: 12, textAlign: "center" }}>
-                تسجيل الدخول
+              <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 22, color: colors.foreground, marginTop: 10, textAlign: "center" }}>
+                إنشاء حساب جديد
               </Text>
-              <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 14, color: colors.muted, marginTop: 4, textAlign: "center" }}>
-                أدخل رقم جوالك وكلمة المرور
+              <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 13, color: colors.muted, marginTop: 4, textAlign: "center" }}>
+                سجل بياناتك للاستمتاع بخدمات مياه هيلان
               </Text>
             </View>
 
-            {errors.general ? (
-              <View style={{ backgroundColor: colors.error + "15", borderRadius: 12, padding: 12, marginBottom: 16 }}>
+            {(errors as any).general ? (
+              <View style={{ backgroundColor: colors.error + "15", borderRadius: 12, padding: 12, marginBottom: 12 }}>
                 <Text style={{ fontFamily: FONT_FAMILY.medium, fontSize: 13, color: colors.error, textAlign: "center" }}>
-                  {errors.general}
+                  {(errors as any).general}
                 </Text>
               </View>
             ) : null}
 
+            {/* Name Input */}
+            <View style={{ marginBottom: 14 }}>
+              <Text style={{ fontFamily: FONT_FAMILY.medium, fontSize: 14, color: colors.foreground, marginBottom: 6, textAlign: "right" }}>
+                الاسم الكامل
+              </Text>
+              <View style={{
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: errors.name ? colors.error : colors.border,
+                paddingHorizontal: 16,
+                height: 50,
+                justifyContent: "center",
+              }}>
+                <TextInput
+                  value={name}
+                  onChangeText={(t) => { setName(t); setErrors((e) => ({ ...e, name: "" })); }}
+                  placeholder="أدخل اسمك الكامل"
+                  placeholderTextColor={colors.muted}
+                  returnKeyType="next"
+                  style={{
+                    fontFamily: FONT_FAMILY.regular,
+                    fontSize: 15,
+                    color: colors.foreground,
+                    textAlign: "right",
+                  }}
+                />
+              </View>
+              {errors.name ? (
+                <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.error, marginTop: 4, textAlign: "right" }}>
+                  {errors.name}
+                </Text>
+              ) : null}
+            </View>
+
             {/* Phone Input */}
-            <View style={{ marginBottom: 16 }}>
+            <View style={{ marginBottom: 14 }}>
               <Text style={{ fontFamily: FONT_FAMILY.medium, fontSize: 14, color: colors.foreground, marginBottom: 6, textAlign: "right" }}>
                 رقم الجوال
               </Text>
@@ -124,14 +167,14 @@ export default function LoginScreen() {
                 borderWidth: 1,
                 borderColor: errors.phone ? colors.error : colors.border,
                 paddingHorizontal: 16,
-                height: 52,
+                height: 50,
               }}>
                 <Text style={{ fontFamily: FONT_FAMILY.medium, fontSize: 14, color: colors.muted, marginRight: 8 }}>
                   +967
                 </Text>
                 <TextInput
                   value={phone}
-                  onChangeText={(t) => { setPhone(t); setErrors((e) => ({ ...e, phone: undefined })); }}
+                  onChangeText={(t) => { setPhone(t); setErrors((e) => ({ ...e, phone: "" })); }}
                   placeholder="7XXXXXXXX"
                   placeholderTextColor={colors.muted}
                   keyboardType="phone-pad"
@@ -139,7 +182,7 @@ export default function LoginScreen() {
                   style={{
                     flex: 1,
                     fontFamily: FONT_FAMILY.regular,
-                    fontSize: 16,
+                    fontSize: 15,
                     color: colors.foreground,
                     textAlign: "right",
                   }}
@@ -153,7 +196,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Password Input */}
-            <View style={{ marginBottom: 24 }}>
+            <View style={{ marginBottom: 14 }}>
               <Text style={{ fontFamily: FONT_FAMILY.medium, fontSize: 14, color: colors.foreground, marginBottom: 6, textAlign: "right" }}>
                 كلمة المرور
               </Text>
@@ -163,20 +206,18 @@ export default function LoginScreen() {
                 borderWidth: 1,
                 borderColor: errors.password ? colors.error : colors.border,
                 paddingHorizontal: 16,
-                height: 52,
+                height: 50,
                 justifyContent: "center",
               }}>
                 <TextInput
                   value={password}
-                  onChangeText={(t) => { setPassword(t); setErrors((e) => ({ ...e, password: undefined })); }}
-                  placeholder="أدخل كلمة المرور"
+                  onChangeText={(t) => { setPassword(t); setErrors((e) => ({ ...e, password: "" })); }}
+                  placeholder="أدخل كلمة المرور (4 أحرف على الأقل)"
                   placeholderTextColor={colors.muted}
                   secureTextEntry
-                  returnKeyType="done"
-                  onSubmitEditing={handleLogin}
                   style={{
                     fontFamily: FONT_FAMILY.regular,
-                    fontSize: 16,
+                    fontSize: 15,
                     color: colors.foreground,
                     textAlign: "right",
                   }}
@@ -189,9 +230,45 @@ export default function LoginScreen() {
               ) : null}
             </View>
 
-            {/* Login Button */}
+            {/* Address Input */}
+            <View style={{ marginBottom: 20 }}>
+              <Text style={{ fontFamily: FONT_FAMILY.medium, fontSize: 14, color: colors.foreground, marginBottom: 6, textAlign: "right" }}>
+                العنوان
+              </Text>
+              <View style={{
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: errors.address ? colors.error : colors.border,
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                minHeight: 70,
+              }}>
+                <TextInput
+                  value={address}
+                  onChangeText={(t) => { setAddress(t); setErrors((e) => ({ ...e, address: "" })); }}
+                  placeholder="أدخل عنوانك بالتفصيل"
+                  placeholderTextColor={colors.muted}
+                  multiline
+                  style={{
+                    fontFamily: FONT_FAMILY.regular,
+                    fontSize: 15,
+                    color: colors.foreground,
+                    textAlign: "right",
+                    textAlignVertical: "top",
+                  }}
+                />
+              </View>
+              {errors.address ? (
+                <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.error, marginTop: 4, textAlign: "right" }}>
+                  {errors.address}
+                </Text>
+              ) : null}
+            </View>
+
+            {/* Register Button */}
             <TouchableOpacity
-              onPress={handleLogin}
+              onPress={handleRegister}
               disabled={isLoading}
               style={{
                 backgroundColor: colors.primary,
@@ -207,20 +284,20 @@ export default function LoginScreen() {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 16, color: "#fff" }}>
-                  تسجيل الدخول
+                  إنشاء حساب
                 </Text>
               )}
             </TouchableOpacity>
 
-            {/* Register Link */}
+            {/* Login Link */}
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 }}>
-              <TouchableOpacity onPress={() => router.push("/register" as any)}>
+              <TouchableOpacity onPress={() => router.push("/login" as any)}>
                 <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 14, color: colors.primary }}>
-                  إنشاء حساب
+                  تسجيل الدخول
                 </Text>
               </TouchableOpacity>
               <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 14, color: colors.muted }}>
-                ليس لديك حساب؟
+                لديك حساب بالفعل؟
               </Text>
             </View>
           </View>

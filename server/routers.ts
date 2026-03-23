@@ -5,7 +5,9 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, adminProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 
-const yemeniPhoneSchema = z.string().regex(/^7[0-9]{8}$/, "\u0631\u0642\u0645 \u0627\u0644\u062c\u0648\u0627\u0644 \u064a\u062c\u0628 \u0623\u0646 \u064a\u0628\u062f\u0623 \u0628\u0640 7 \u0648\u064a\u062a\u0643\u0648\u0646 \u0645\u0646 9 \u0623\u0631\u0642\u0627\u0645");
+const yemeniPhoneSchema = z.string().regex(/^7[0-9]{8}$/, "رقم الجوال يجب أن يبدأ بـ 7 ويتكون من 9 أرقام");
+
+const PRODUCT_IMAGE = "https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png";
 
 export const appRouter = router({
   system: systemRouter,
@@ -16,6 +18,57 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+  }),
+
+  appAuth: router({
+    login: publicProcedure
+      .input(z.object({
+        phone: yemeniPhoneSchema,
+        password: z.string().min(1, "كلمة المرور مطلوبة"),
+      }))
+      .mutation(async ({ input }) => {
+        const user = await db.verifyAppUser(input.phone, input.password);
+        if (!user) {
+          throw new Error("رقم الجوال أو كلمة المرور غير صحيحة");
+        }
+        return {
+          id: user.id,
+          name: user.name,
+          phone: user.phone,
+          address: user.address || "",
+          role: user.role,
+        };
+      }),
+    register: publicProcedure
+      .input(z.object({
+        name: z.string().min(1, "الاسم مطلوب"),
+        phone: yemeniPhoneSchema,
+        password: z.string().min(4, "كلمة المرور يجب أن تكون 4 أحرف على الأقل"),
+        address: z.string().min(1, "العنوان مطلوب"),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const userId = await db.createAppUser({
+            name: input.name,
+            phone: input.phone,
+            password: input.password,
+            address: input.address,
+            role: "customer",
+          });
+          return {
+            id: userId,
+            name: input.name,
+            phone: input.phone,
+            address: input.address,
+            role: "customer" as const,
+          };
+        } catch (err: any) {
+          if (err.message === "PHONE_EXISTS") {
+            throw new Error("رقم الجوال مسجل مسبقاً");
+          }
+          throw err;
+        }
+      }),
   }),
 
   products: router({
@@ -61,9 +114,9 @@ export const appRouter = router({
   orders: router({
     create: publicProcedure
       .input(z.object({
-        customerName: z.string().min(1, "\u0627\u0644\u0627\u0633\u0645 \u0645\u0637\u0644\u0648\u0628"),
+        customerName: z.string().min(1, "الاسم مطلوب"),
         customerPhone: yemeniPhoneSchema,
-        customerAddress: z.string().min(1, "\u0627\u0644\u0639\u0646\u0648\u0627\u0646 \u0645\u0637\u0644\u0648\u0628"),
+        customerAddress: z.string().min(1, "العنوان مطلوب"),
         notes: z.string().optional(),
         isGuest: z.boolean().default(true),
         items: z.array(z.object({
@@ -117,16 +170,16 @@ export const appRouter = router({
         const order = await db.getOrderById(input.id);
         if (order) {
           const statusLabels: Record<string, string> = {
-            new: "\u062c\u062f\u064a\u062f",
-            processing: "\u0642\u064a\u062f \u0627\u0644\u0645\u0639\u0627\u0644\u062c\u0629",
-            delivering: "\u062c\u0627\u0631\u064a \u0627\u0644\u062a\u0648\u0635\u064a\u0644",
-            delivered: "\u062a\u0645 \u0627\u0644\u062a\u0633\u0644\u064a\u0645",
+            new: "جديد",
+            processing: "قيد المعالجة",
+            delivering: "جاري التوصيل",
+            delivered: "تم التسليم",
           };
           await db.createNotification({
             orderId: input.id,
             customerPhone: order.customerPhone,
-            title: "\u062a\u062d\u062f\u064a\u062b \u062d\u0627\u0644\u0629 \u0627\u0644\u0637\u0644\u0628",
-            message: `\u062a\u0645 \u062a\u062d\u062f\u064a\u062b \u062d\u0627\u0644\u0629 \u0637\u0644\u0628\u0643 \u0631\u0642\u0645 ${order.orderNumber} \u0625\u0644\u0649: ${statusLabels[input.status]}`,
+            title: "تحديث حالة الطلب",
+            message: `تم تحديث حالة طلبك رقم ${order.orderNumber} إلى: ${statusLabels[input.status]}`,
           });
         }
         return { success: true };
@@ -152,6 +205,7 @@ export const appRouter = router({
   seed: router({
     products: publicProcedure.mutation(async () => {
       await db.seedProducts();
+      await db.seedAdminUser();
       return { success: true };
     }),
   }),

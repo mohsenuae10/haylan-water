@@ -1,4 +1,4 @@
-import { Text, View, TouchableOpacity, ActivityIndicator, TextInput } from "react-native";
+import { Text, View, TouchableOpacity, ActivityIndicator, TextInput, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { useAppStore } from "@/lib/store";
 import { formatPrice, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, validateYemeniPhone } from "@/lib/validation";
 import { useState } from "react";
-import { FlatList } from "react-native";
+import { FONT_FAMILY } from "@/lib/fonts";
 
 export default function OrdersScreen() {
   const router = useRouter();
@@ -16,7 +16,7 @@ export default function OrdersScreen() {
   const [searchPhone, setSearchPhone] = useState(state.user?.phone || "");
   const [phoneError, setPhoneError] = useState("");
 
-  const { data: orders, isLoading, refetch } = trpc.orders.getByPhone.useQuery(
+  const { data: orders, isLoading } = trpc.orders.getByPhone.useQuery(
     { phone: searchPhone },
     { enabled: !!searchPhone && validateYemeniPhone(searchPhone).valid }
   );
@@ -53,19 +53,19 @@ export default function OrdersScreen() {
             borderRadius: 8,
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: "600", color: ORDER_STATUS_COLORS[order.status] }}>
+          <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 12, color: ORDER_STATUS_COLORS[order.status] }}>
             {ORDER_STATUS_LABELS[order.status]}
           </Text>
         </View>
-        <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>
+        <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 14, color: colors.foreground }}>
           #{order.orderNumber}
         </Text>
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
-        <Text style={{ fontSize: 14, fontWeight: "600", color: colors.primary }}>
+        <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 14, color: colors.primary }}>
           {formatPrice(order.totalAmount)}
         </Text>
-        <Text style={{ fontSize: 12, color: colors.muted }}>
+        <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted }}>
           {new Date(order.createdAt).toLocaleDateString("ar-YE")}
         </Text>
       </View>
@@ -74,15 +74,15 @@ export default function OrdersScreen() {
 
   return (
     <ScreenContainer className="px-4">
-      <Text className="text-2xl font-bold text-foreground text-right pt-4 pb-3">
-        {"\u0637\u0644\u0628\u0627\u062a\u064a"}
+      <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 24, color: colors.foreground, textAlign: "right", paddingTop: 16, paddingBottom: 12 }}>
+        طلباتي
       </Text>
 
       {/* Phone Search */}
       {!state.user?.isLoggedIn && (
-        <View className="mb-4">
-          <Text style={{ fontSize: 13, color: colors.muted, textAlign: "right", marginBottom: 8 }}>
-            {"\u0623\u062f\u062e\u0644 \u0631\u0642\u0645 \u062c\u0648\u0627\u0644\u0643 \u0644\u0639\u0631\u0636 \u0637\u0644\u0628\u0627\u062a\u0643"}
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 13, color: colors.muted, textAlign: "right", marginBottom: 8 }}>
+            أدخل رقم جوالك لعرض طلباتك
           </Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity
@@ -95,7 +95,7 @@ export default function OrdersScreen() {
               onPress={handleSearch}
               activeOpacity={0.7}
             >
-              <Text style={{ color: "#fff", fontWeight: "600" }}>{"\u0628\u062d\u062b"}</Text>
+              <Text style={{ fontFamily: FONT_FAMILY.semiBold, color: "#fff" }}>بحث</Text>
             </TouchableOpacity>
             <TextInput
               style={{
@@ -103,6 +103,7 @@ export default function OrdersScreen() {
                 backgroundColor: colors.surface,
                 borderRadius: 12,
                 padding: 12,
+                fontFamily: FONT_FAMILY.regular,
                 fontSize: 16,
                 textAlign: "right",
                 borderWidth: 1,
@@ -120,7 +121,7 @@ export default function OrdersScreen() {
             />
           </View>
           {phoneError ? (
-            <Text style={{ color: colors.error, fontSize: 12, textAlign: "right", marginTop: 4 }}>
+            <Text style={{ fontFamily: FONT_FAMILY.regular, color: colors.error, fontSize: 12, textAlign: "right", marginTop: 4 }}>
               {phoneError}
             </Text>
           ) : null}
@@ -128,13 +129,13 @@ export default function OrdersScreen() {
       )}
 
       {isLoading ? (
-        <View className="flex-1 items-center justify-center">
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : !searchPhone ? (
-        <View className="flex-1 items-center justify-center">
-          <Text style={{ fontSize: 16, color: colors.muted, textAlign: "center" }}>
-            {"\u0623\u062f\u062e\u0644 \u0631\u0642\u0645 \u062c\u0648\u0627\u0644\u0643 \u0644\u0644\u0628\u062d\u062b \u0639\u0646 \u0637\u0644\u0628\u0627\u062a\u0643"}
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 16, color: colors.muted, textAlign: "center" }}>
+            أدخل رقم جوالك للبحث عن طلباتك
           </Text>
         </View>
       ) : orders && orders.length > 0 ? (
@@ -146,9 +147,9 @@ export default function OrdersScreen() {
           contentContainerStyle={{ paddingBottom: 20 }}
         />
       ) : (
-        <View className="flex-1 items-center justify-center">
-          <Text style={{ fontSize: 16, color: colors.muted, textAlign: "center" }}>
-            {"\u0644\u0627 \u062a\u0648\u062c\u062f \u0637\u0644\u0628\u0627\u062a \u062d\u0627\u0644\u064a\u0627\u064b"}
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 16, color: colors.muted, textAlign: "center" }}>
+            لا توجد طلبات حالياً
           </Text>
         </View>
       )}

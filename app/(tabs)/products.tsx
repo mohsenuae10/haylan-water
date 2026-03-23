@@ -1,4 +1,4 @@
-import { Text, View, TouchableOpacity, Dimensions, ActivityIndicator } from "react-native";
+import { Text, View, TouchableOpacity, Dimensions, ActivityIndicator, FlatList } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -6,8 +6,9 @@ import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { formatPrice } from "@/lib/validation";
 import { useAppStore } from "@/lib/store";
-import { FlatList } from "react-native";
+import { FONT_FAMILY } from "@/lib/fonts";
 
+const PRODUCT_IMAGE = require("@/assets/images/product-carton.png");
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function ProductsScreen() {
@@ -30,16 +31,18 @@ export default function ProductsScreen() {
       activeOpacity={0.7}
       onPress={() => router.push(`/product/${product.id}` as any)}
     >
-      <Image
-        source={{ uri: product.imageUrl || "" }}
-        style={{ width: "100%", height: 150 }}
-        contentFit="contain"
-      />
+      <View style={{ backgroundColor: "#F0F8FF", padding: 8 }}>
+        <Image
+          source={PRODUCT_IMAGE}
+          style={{ width: "100%", height: 130 }}
+          contentFit="contain"
+        />
+      </View>
       <View style={{ padding: 12 }}>
-        <Text style={{ fontSize: 15, fontWeight: "700", color: colors.foreground, textAlign: "right" }}>
+        <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 15, color: colors.foreground, textAlign: "right" }}>
           {product.nameAr}
         </Text>
-        <Text style={{ fontSize: 12, color: colors.muted, textAlign: "right", marginTop: 2 }}>
+        <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted, textAlign: "right", marginTop: 2 }}>
           {product.size}
         </Text>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
@@ -63,11 +66,11 @@ export default function ProductsScreen() {
             }}
             activeOpacity={0.7}
           >
-            <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>
-              {"\u0627\u0637\u0644\u0628 \u0627\u0644\u0622\u0646"}
+            <Text style={{ fontFamily: FONT_FAMILY.semiBold, color: "#fff", fontSize: 13 }}>
+              اطلب الآن
             </Text>
           </TouchableOpacity>
-          <Text style={{ fontSize: 15, fontWeight: "700", color: colors.primary }}>
+          <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 15, color: colors.primary }}>
             {formatPrice(product.price)}
           </Text>
         </View>
@@ -77,11 +80,11 @@ export default function ProductsScreen() {
 
   return (
     <ScreenContainer className="px-4">
-      <Text className="text-2xl font-bold text-foreground text-right pt-4 pb-3">
-        {"\u0645\u0646\u062a\u062c\u0627\u062a\u0646\u0627"}
+      <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 24, color: colors.foreground, textAlign: "right", paddingTop: 16, paddingBottom: 12 }}>
+        منتجاتنا
       </Text>
       {isLoading ? (
-        <View className="flex-1 items-center justify-center">
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (

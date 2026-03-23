@@ -5,6 +5,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Platform, View, Text } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 import { useAppStore } from "@/lib/store";
+import { FONT_FAMILY } from "@/lib/fonts";
 
 export default function TabLayout() {
   const colors = useColors();
@@ -29,8 +30,8 @@ export default function TabLayout() {
           borderTopWidth: 0.5,
         },
         tabBarLabelStyle: {
+          fontFamily: FONT_FAMILY.semiBold,
           fontSize: 11,
-          fontWeight: "600",
         },
       }}
     >
