@@ -640,7 +640,7 @@ export async function uploadCategoryImage(uri: string, categoryId: string): Prom
   const arrayBuffer = await new Response(blob).arrayBuffer();
 
   const { error: uploadError } = await supabase.storage
-    .from("category-images")
+    .from("product-images")
     .upload(filePath, arrayBuffer, {
       contentType: `image/${ext === "png" ? "png" : "jpeg"}`,
       upsert: true,
@@ -649,7 +649,7 @@ export async function uploadCategoryImage(uri: string, categoryId: string): Prom
   if (uploadError) throw new Error(uploadError.message);
 
   const { data: urlData } = supabase.storage
-    .from("category-images")
+    .from("product-images")
     .getPublicUrl(filePath);
 
   // Update category record with image_url

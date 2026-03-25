@@ -15,7 +15,7 @@ const PRODUCT_IMAGE = require("@/assets/images/product-carton.png");
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const BANNER_WIDTH = SCREEN_WIDTH - 32;
-const BANNER_HEIGHT = 160;
+const BANNER_HEIGHT = 200;
 const BANNER_INTERVAL = 4000; // Auto-slide every 4 seconds
 
 const CATEGORY_STYLES: Record<string, { bg: string; border: string; text: string; iconBg: string }> = {
@@ -202,30 +202,32 @@ export default function HomeScreen() {
                     onPress={() => router.push({ pathname: "/(tabs)/products", params: { category: cat.id } } as any)}
                     style={{
                       flex: 1,
-                      backgroundColor: style.bg,
                       borderRadius: 16,
-                      padding: 16,
+                      overflow: "hidden",
                       borderWidth: 1.5,
                       borderColor: style.border,
-                      alignItems: "center",
+                      height: 160,
                     }}
                     activeOpacity={0.7}
                   >
                     {cat.image_url ? (
-                      <View style={{ width: 56, height: 56, borderRadius: 28, overflow: "hidden", marginBottom: 8, borderWidth: 2, borderColor: style.border }}>
-                        <Image source={{ uri: cat.image_url }} style={{ width: 56, height: 56 }} contentFit="cover" />
-                      </View>
+                      <Image source={{ uri: cat.image_url }} style={{ width: "100%", height: "100%", position: "absolute" }} contentFit="cover" />
                     ) : (
-                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: style.iconBg, justifyContent: "center", alignItems: "center", marginBottom: 8 }}>
-                        <Text style={{ fontSize: 28 }}>{cat.icon}</Text>
+                      <View style={{ width: "100%", height: "100%", position: "absolute", backgroundColor: style.bg, justifyContent: "center", alignItems: "center" }}>
+                        <Text style={{ fontSize: 48 }}>{cat.icon}</Text>
                       </View>
                     )}
-                    <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 16, color: style.text }}>
-                      {cat.name_ar}
-                    </Text>
-                    <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 11, color: "#666", textAlign: "center", marginTop: 4 }}>
-                      {cat.description_ar}
-                    </Text>
+                    {/* Overlay gradient */}
+                    <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "rgba(0,0,0,0.45)", paddingVertical: 10, paddingHorizontal: 12 }}>
+                      <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 16, color: "#fff", textAlign: "center" }}>
+                        {cat.name_ar}
+                      </Text>
+                      {cat.description_ar ? (
+                        <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 11, color: "rgba(255,255,255,0.85)", textAlign: "center", marginTop: 2 }} numberOfLines={1}>
+                          {cat.description_ar}
+                        </Text>
+                      ) : null}
+                    </View>
                   </TouchableOpacity>
                 );
               })}
