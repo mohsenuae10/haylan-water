@@ -1,7 +1,7 @@
-import "react-native-url-polyfill/dist/setup";
+import "react-native-url-polyfill/auto";
 import { createClient } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { Database } from "./supabase-types";
+import type { Database, ProductCategory } from "./supabase-types";
 
 // ============================================================
 // Supabase Client Configuration
@@ -117,9 +117,25 @@ export async function getProfile(userId: string) {
   return data;
 }
 
+// ============ Categories ============
+
+export async function getCategories() {
+  const { data, error } = await supabase
+    .from("categories")
+    .select("*")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching categories:", error);
+    return [];
+  }
+  return data || [];
+}
+
 // ============ Products ============
 
-export async function getProducts(activeOnly = true) {
+export async function getProducts(activeOnly = true, category?: ProductCategory) {
   let query = supabase
     .from("products")
     .select("*")
@@ -129,8 +145,31 @@ export async function getProducts(activeOnly = true) {
     query = query.eq("is_active", true);
   }
 
+  if (category) {
+    query = query.eq("category", category);
+  }
+
   const { data, error } = await query;
   if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function getProductsByCategory(category: ProductCategory) {
+  return getProducts(true, category);
+}
+
+export async function getFeaturedProducts(limit = 6) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("Error fetching featured products:", error);
+    return [];
+  }
   return data || [];
 }
 
@@ -154,6 +193,7 @@ export async function createProduct(product: {
   description?: string;
   description_ar?: string;
   sort_order?: number;
+  category?: string;
 }) {
   const { data, error } = await supabase
     .from("products")
@@ -193,10 +233,42 @@ export async function updateProduct(
 export async function deleteProduct(id: number) {
   const { error } = await supabase
     .from("products")
-    .update({ is_active: false })
+    .delete()
     .eq("id", id);
 
   if (error) throw new Error(error.message);
+}
+
+/**
+ * Upload a product image to Supabase Storage.
+ * Requires a "product-images" bucket in Supabase Storage.
+ */
+export async function uploadProductImage(uri: string, fileName?: string): Promise<string> {
+  const ext = uri.split(".").pop()?.toLowerCase() || "jpg";
+  const name = fileName || `product_${Date.now()}.${ext}`;
+  const filePath = `products/${name}`;
+
+  // Fetch the file as a blob
+  const response = await fetch(uri);
+  const blob = await response.blob();
+
+  // Convert blob to ArrayBuffer for upload
+  const arrayBuffer = await new Response(blob).arrayBuffer();
+
+  const { error: uploadError } = await supabase.storage
+    .from("product-images")
+    .upload(filePath, arrayBuffer, {
+      contentType: `image/${ext === "png" ? "png" : "jpeg"}`,
+      upsert: true,
+    });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data } = supabase.storage
+    .from("product-images")
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
 }
 
 // ============ Customers ============

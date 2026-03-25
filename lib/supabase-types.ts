@@ -49,6 +49,7 @@ export type Database = {
           description_ar: string | null;
           is_active: boolean;
           sort_order: number;
+          category: string;
           created_at: string;
           updated_at: string;
         };
@@ -63,6 +64,7 @@ export type Database = {
           description_ar?: string | null;
           is_active?: boolean;
           sort_order?: number;
+          category?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -77,8 +79,45 @@ export type Database = {
           description_ar?: string | null;
           is_active?: boolean;
           sort_order?: number;
+          category?: string;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      categories: {
+        Row: {
+          id: string;
+          name_ar: string;
+          name_en: string;
+          icon: string;
+          image_url: string | null;
+          description_ar: string | null;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          name_ar: string;
+          name_en: string;
+          icon: string;
+          image_url?: string | null;
+          description_ar?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name_ar?: string;
+          name_en?: string;
+          icon?: string;
+          image_url?: string | null;
+          description_ar?: string | null;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -285,3 +324,5 @@ export type Customer = Database["public"]["Tables"]["customers"]["Row"];
 export type Order = Database["public"]["Tables"]["orders"]["Row"];
 export type OrderItem = Database["public"]["Tables"]["order_items"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
+export type Category = Database["public"]["Tables"]["categories"]["Row"];
+export type ProductCategory = "water" | "tissues";

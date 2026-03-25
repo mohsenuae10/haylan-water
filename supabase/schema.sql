@@ -26,8 +26,22 @@ CREATE TABLE IF NOT EXISTS products (
   description_ar TEXT,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   sort_order INT NOT NULL DEFAULT 0,
+  category VARCHAR(50) NOT NULL DEFAULT 'water',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============ Categories ============
+CREATE TABLE IF NOT EXISTS categories (
+  id VARCHAR(50) PRIMARY KEY,
+  name_ar VARCHAR(255) NOT NULL,
+  name_en VARCHAR(255) NOT NULL,
+  icon VARCHAR(10) NOT NULL,
+  image_url TEXT,
+  description_ar TEXT,
+  sort_order INT NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============ Customers ============
@@ -96,6 +110,8 @@ CREATE TRIGGER profiles_updated_at BEFORE UPDATE ON profiles
 CREATE TRIGGER products_updated_at BEFORE UPDATE ON products
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
+-- No trigger needed for categories (no updated_at column)
+
 CREATE TRIGGER customers_updated_at BEFORE UPDATE ON customers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
@@ -139,6 +155,7 @@ GRANT EXECUTE ON FUNCTION public.is_admin TO anon;
 -- Enable RLS on all tables
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
@@ -171,6 +188,20 @@ CREATE POLICY "Anon can view active products"
   ON products FOR SELECT
   TO anon
   USING (is_active = TRUE);
+
+-- Categories: everyone can read active categories
+CREATE POLICY "Anyone can view active categories"
+  ON categories FOR SELECT
+  USING (is_active = TRUE);
+
+CREATE POLICY "Anon can view active categories"
+  ON categories FOR SELECT
+  TO anon
+  USING (is_active = TRUE);
+
+CREATE POLICY "Admins can manage categories"
+  ON categories FOR ALL
+  USING (public.is_admin());
 
 -- Customers: linked to orders
 CREATE POLICY "Anyone can create customers"
@@ -257,12 +288,22 @@ CREATE POLICY "Anon can view notifications"
   TO anon
   USING (TRUE);
 
+-- ============ Seed Categories ============
+INSERT INTO categories (id, name_ar, name_en, icon, description_ar, sort_order) VALUES
+  ('water', 'مياه هيلان', 'Haylan Water', '💧', 'مياه طبيعية نقية من جبال اليمن', 1),
+  ('tissues', 'مناديل هيلان', 'Haylan Tissues', '🧻', 'مناديل ناعمة عالية الجودة', 2)
+ON CONFLICT (id) DO NOTHING;
+
 -- ============ Seed Products ============
-INSERT INTO products (name, name_ar, size, price, image_url, description, description_ar, is_active, sort_order) VALUES
-  ('Haylan Water 330ml', 'مياه هيلان 330 مل', '330ml', 150, 'https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png', 'Pure natural water, perfect for on-the-go hydration', 'مياه طبيعية نقية، مثالية للترطيب أثناء التنقل', TRUE, 1),
-  ('Haylan Water 500ml', 'مياه هيلان 500 مل', '500ml', 200, 'https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png', 'Pure natural water, ideal daily companion', 'مياه طبيعية نقية، رفيقك اليومي المثالي', TRUE, 2),
-  ('Haylan Water 750ml', 'مياه هيلان 750 مل', '750ml', 300, 'https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png', 'Pure natural water, great for sports and activities', 'مياه طبيعية نقية، مثالية للرياضة والأنشطة', TRUE, 3),
-  ('Haylan Water 1.5L', 'مياه هيلان 1.5 لتر', '1.5L', 400, 'https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png', 'Pure natural water, family size for home use', 'مياه طبيعية نقية، حجم عائلي للاستخدام المنزلي', TRUE, 4)
+INSERT INTO products (name, name_ar, size, price, image_url, description, description_ar, is_active, sort_order, category) VALUES
+  ('Haylan Water 330ml', 'مياه هيلان 330 مل', '330ml', 150, 'https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png', 'Pure natural water, perfect for on-the-go hydration', 'مياه طبيعية نقية، مثالية للترطيب أثناء التنقل', TRUE, 1, 'water'),
+  ('Haylan Water 500ml', 'مياه هيلان 500 مل', '500ml', 200, 'https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png', 'Pure natural water, ideal daily companion', 'مياه طبيعية نقية، رفيقك اليومي المثالي', TRUE, 2, 'water'),
+  ('Haylan Water 750ml', 'مياه هيلان 750 مل', '750ml', 300, 'https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png', 'Pure natural water, great for sports and activities', 'مياه طبيعية نقية، مثالية للرياضة والأنشطة', TRUE, 3, 'water'),
+  ('Haylan Water 1.5L', 'مياه هيلان 1.5 لتر', '1.5L', 400, 'https://files.manuscdn.com/user_upload_by_module/session_file/100988061/bSHeoDkWqPlwtqGy.png', 'Pure natural water, family size for home use', 'مياه طبيعية نقية، حجم عائلي للاستخدام المنزلي', TRUE, 4, 'water'),
+  ('Haylan Soft Tissues 200', 'مناديل هيلان الناعمة 200 ورقة', '200 ورقة', 500, NULL, 'Soft facial tissues, gentle on skin', 'مناديل وجه ناعمة ولطيفة على البشرة', TRUE, 10, 'tissues'),
+  ('Haylan Kitchen Roll', 'مناديل هيلان للمطبخ - رول', '1 رول', 800, NULL, 'Strong kitchen paper towels', 'مناديل مطبخ قوية ومتينة', TRUE, 11, 'tissues'),
+  ('Haylan Pocket Tissues 10pk', 'مناديل هيلان للجيب - 10 حبات', '10 حبات', 200, NULL, 'Compact pocket tissues', 'مناديل جيب صغيرة وعملية', TRUE, 12, 'tissues'),
+  ('Haylan Wet Wipes 80', 'مناديل هيلان مبللة 80 ورقة', '80 ورقة', 1000, NULL, 'Antibacterial wet wipes', 'مناديل مبللة معقمة ومضادة للبكتيريا', TRUE, 13, 'tissues')
 ON CONFLICT DO NOTHING;
 
 -- ============ Seed Admin User ============
@@ -272,6 +313,8 @@ ON CONFLICT DO NOTHING;
 
 -- ============ Indexes ============
 CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active, sort_order);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_category_active ON products(category, is_active, sort_order);
 CREATE INDEX IF NOT EXISTS idx_orders_phone ON orders(customer_phone);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_orders_number ON orders(order_number);

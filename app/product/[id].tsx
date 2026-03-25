@@ -73,12 +73,30 @@ export default function ProductDetailScreen() {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         {/* Product Image */}
-        <View style={{ alignItems: "center", paddingVertical: 20, backgroundColor: "#F0F8FF", marginHorizontal: 16, borderRadius: 20 }}>
-          <Image
-            source={PRODUCT_IMAGE}
-            style={{ width: 250, height: 250 }}
-            contentFit="contain"
-          />
+        <View style={{ alignItems: "center", paddingVertical: 20, backgroundColor: product.category === "tissues" ? "#FDF2FF" : "#F0F8FF", marginHorizontal: 16, borderRadius: 20, position: "relative" }}>
+          {/* Category Badge */}
+          <View style={{
+            position: "absolute", top: 12, right: 12, zIndex: 1,
+            backgroundColor: product.category === "tissues" ? "#F3E5F5" : "#E3F2FD",
+            borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4,
+          }}>
+            <Text style={{ fontSize: 12, fontFamily: FONT_FAMILY.semiBold }}>
+              {product.category === "tissues" ? "🧻 مناديل" : "💧 مياه"}
+            </Text>
+          </View>
+          {product.image_url ? (
+            <Image
+              source={{ uri: product.image_url }}
+              style={{ width: 250, height: 250 }}
+              contentFit="contain"
+            />
+          ) : (
+            <Image
+              source={PRODUCT_IMAGE}
+              style={{ width: 250, height: 250 }}
+              contentFit="contain"
+            />
+          )}
         </View>
 
         {/* Product Info */}
