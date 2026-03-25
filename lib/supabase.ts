@@ -65,6 +65,18 @@ export async function signUp(data: {
     throw new Error(error.message);
   }
 
+  // If signup didn't return a session (email confirmation flow),
+  // auto-login since we have auto-confirm enabled
+  if (authData.user && !authData.session) {
+    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password: data.password,
+    });
+    if (!loginError && loginData.session) {
+      return { user: loginData.user, session: loginData.session };
+    }
+  }
+
   return authData;
 }
 

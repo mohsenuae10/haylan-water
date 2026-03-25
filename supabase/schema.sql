@@ -119,10 +119,10 @@ CREATE TRIGGER orders_updated_at BEFORE UPDATE ON orders
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 -- ============ Auto-create profile on signup ============
-CREATE OR REPLACE FUNCTION handle_new_user()
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO profiles (id, name, phone, address, role)
+  INSERT INTO public.profiles (id, name, phone, address, role)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'name', ''),
@@ -131,12 +131,24 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'role', 'customer')
   );
   RETURN NEW;
+EXCEPTION
+  WHEN unique_violation THEN
+    UPDATE public.profiles
+    SET name = COALESCE(NEW.raw_user_meta_data->>'name', ''),
+        address = COALESCE(NEW.raw_user_meta_data->>'address', ''),
+        role = COALESCE(NEW.raw_user_meta_data->>'role', 'customer')
+    WHERE phone = COALESCE(NEW.raw_user_meta_data->>'phone', '');
+    RETURN NEW;
+  WHEN OTHERS THEN
+    RAISE WARNING 'handle_new_user failed: %', SQLERRM;
+    RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ============ Admin check function (SECURITY DEFINER to bypass RLS) ============
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -145,7 +157,7 @@ RETURNS BOOLEAN AS $$
     SELECT 1 FROM public.profiles 
     WHERE id = auth.uid() AND role = 'admin'
   );
-$$ LANGUAGE sql SECURITY DEFINER STABLE;
+$$ LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_admin TO anon;
@@ -174,6 +186,10 @@ CREATE POLICY "Admins can view all profiles"
   ON profiles FOR SELECT
   USING (public.is_admin());
 
+CREATE POLICY "Allow trigger to create profiles"
+  ON profiles FOR INSERT
+  WITH CHECK (TRUE);
+
 -- Products: everyone can read active products
 CREATE POLICY "Anyone can view active products"
   ON products FOR SELECT
@@ -181,7 +197,8 @@ CREATE POLICY "Anyone can view active products"
 
 CREATE POLICY "Admins can manage products"
   ON products FOR ALL
-  USING (public.is_admin());
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- Allow anonymous access to products (for guest users)
 CREATE POLICY "Anon can view active products"
@@ -201,7 +218,8 @@ CREATE POLICY "Anon can view active categories"
 
 CREATE POLICY "Admins can manage categories"
   ON categories FOR ALL
-  USING (public.is_admin());
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- Customers: linked to orders
 CREATE POLICY "Anyone can create customers"
@@ -214,7 +232,8 @@ CREATE POLICY "Users can view own customer record"
 
 CREATE POLICY "Admins can manage customers"
   ON customers FOR ALL
-  USING (public.is_admin());
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- Allow anonymous customer creation
 CREATE POLICY "Anon can create customers"
@@ -238,7 +257,8 @@ CREATE POLICY "Users can view own orders by phone"
 
 CREATE POLICY "Admins can manage orders"
   ON orders FOR ALL
-  USING (public.is_admin());
+  USING (public.is_admin())
+  WITH CHECK (public.is_admin());
 
 -- Allow anonymous order creation and viewing
 CREATE POLICY "Anon can create orders"
@@ -322,3 +342,12 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_phone ON notifications(customer_phone);
 CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone);
 CREATE INDEX IF NOT EXISTS idx_profiles_phone ON profiles(phone);
+
+-- ============ Permissions for Auth Trigger ============
+GRANT USAGE ON SCHEMA public TO supabase_auth_admin;
+GRANT INSERT, UPDATE ON public.profiles TO supabase_auth_admin;
+
+-- ============ Permissions for Authenticated Users ============
+GRANT ALL ON public.products TO authenticated;
+GRANT USAGE, SELECT ON SEQUENCE products_id_seq TO authenticated;
+GRANT ALL ON public.categories TO authenticated;
