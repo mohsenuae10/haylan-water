@@ -14,7 +14,7 @@ import { Image } from "expo-image";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAppStore } from "@/lib/store";
 import { validateYemeniPhone } from "@/lib/validation";
-import { trpc } from "@/lib/trpc";
+import { signIn, getProfile } from "@/lib/supabase";
 import { FONT_FAMILY } from "@/lib/fonts";
 import { useColors } from "@/hooks/use-colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,8 +29,6 @@ export default function LoginScreen() {
   const [errors, setErrors] = useState<{ phone?: string; password?: string; general?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const loginMutation = trpc.appAuth.login.useMutation();
-
   const handleLogin = async () => {
     const newErrors: typeof errors = {};
     const phoneValidation = validateYemeniPhone(phone);
@@ -43,16 +41,18 @@ export default function LoginScreen() {
     setErrors({});
     setIsLoading(true);
     try {
-      const result = await loginMutation.mutateAsync({ phone: phone.trim(), password: password.trim() });
+      const result = await signIn(phone.trim(), password.trim());
+      const profile = await getProfile(result.user.id);
+      const role = (profile?.role || "customer") as "customer" | "admin";
       login({
-        id: result.id,
-        name: result.name,
-        phone: result.phone,
-        address: result.address,
-        role: result.role as "customer" | "admin",
+        id: result.user.id,
+        name: profile?.name || "",
+        phone: profile?.phone || phone.trim(),
+        address: profile?.address || "",
+        role,
         isLoggedIn: true,
       });
-      if (result.role === "admin") {
+      if (role === "admin") {
         router.replace("/admin" as any);
       } else {
         router.back();

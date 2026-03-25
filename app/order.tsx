@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useAppStore } from "@/lib/store";
-import { trpc } from "@/lib/trpc";
+import { createOrder } from "@/lib/supabase";
 import { formatPrice, validateYemeniPhone } from "@/lib/validation";
 import { useState } from "react";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -28,8 +28,6 @@ export default function OrderScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const createOrderMutation = trpc.orders.create.useMutation();
-
   const validate = () => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "الاسم مطلوب";
@@ -45,22 +43,24 @@ export default function OrderScreen() {
     if (!validate()) return;
     setIsSubmitting(true);
     try {
-      const result = await createOrderMutation.mutateAsync({
-        customerName: name.trim(),
-        customerPhone: phone.trim(),
-        customerAddress: address.trim(),
-        notes: notes.trim() || undefined,
-        isGuest: !user?.isLoggedIn,
-        items: cart.map((item) => ({
+      const result = await createOrder(
+        {
+          customerName: name.trim(),
+          customerPhone: phone.trim(),
+          customerAddress: address.trim(),
+          notes: notes.trim() || undefined,
+          isGuest: !user?.isLoggedIn,
+          totalAmount: cartTotal.toString(),
+        },
+        cart.map((item) => ({
           productId: item.productId,
           productName: item.productName,
           productSize: item.productSize,
           quantity: item.quantity,
           unitPrice: item.unitPrice.toString(),
           totalPrice: (item.unitPrice * item.quantity).toString(),
-        })),
-        totalAmount: cartTotal.toString(),
-      });
+        }))
+      );
       clearCart();
       router.replace(`/order-success?orderNumber=${result.orderNumber}&orderId=${result.orderId}` as any);
     } catch (error: any) {

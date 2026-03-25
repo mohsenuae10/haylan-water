@@ -3,10 +3,12 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { trpc } from "@/lib/trpc";
+import { getProducts } from "@/lib/supabase";
 import { formatPrice } from "@/lib/validation";
 import { useAppStore } from "@/lib/store";
 import { FONT_FAMILY } from "@/lib/fonts";
+import { useEffect, useState } from "react";
+import type { Product } from "@/lib/supabase-types";
 
 const PRODUCT_IMAGE = require("@/assets/images/product-carton.png");
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -15,7 +17,15 @@ export default function ProductsScreen() {
   const router = useRouter();
   const colors = useColors();
   const { addToCart } = useAppStore();
-  const { data: products, isLoading } = trpc.products.list.useQuery();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    getProducts(true)
+      .then(setProducts)
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const renderProduct = ({ item: product }: { item: any }) => (
     <TouchableOpacity
@@ -40,7 +50,7 @@ export default function ProductsScreen() {
       </View>
       <View style={{ padding: 12 }}>
         <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 15, color: colors.foreground, textAlign: "right" }}>
-          {product.nameAr}
+          {product.name_ar}
         </Text>
         <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted, textAlign: "right", marginTop: 2 }}>
           {product.size}
@@ -56,11 +66,11 @@ export default function ProductsScreen() {
             onPress={() => {
               addToCart({
                 productId: product.id,
-                productName: product.nameAr,
+                productName: product.name_ar,
                 productSize: product.size,
-                imageUrl: product.imageUrl || "",
+                imageUrl: product.image_url || "",
                 quantity: 1,
-                unitPrice: parseFloat(product.price),
+                unitPrice: Number(product.price),
               });
               router.push("/order" as any);
             }}

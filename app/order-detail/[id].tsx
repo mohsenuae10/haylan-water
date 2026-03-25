@@ -2,22 +2,57 @@ import { Text, View, TouchableOpacity, ActivityIndicator, ScrollView } from "rea
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { trpc } from "@/lib/trpc";
+import { getOrderById } from "@/lib/supabase";
 import { formatPrice, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "@/lib/validation";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { FONT_FAMILY } from "@/lib/fonts";
+import { useState, useEffect } from "react";
 
 const STATUSES = ["new", "processing", "delivering", "delivered"] as const;
+
+interface OrderWithItems {
+  id: number;
+  order_number: string;
+  customer_name: string;
+  customer_phone: string;
+  customer_address: string;
+  status: string;
+  total_amount: number;
+  notes: string | null;
+  items: Array<{
+    id: number;
+    product_name: string;
+    product_size: string;
+    quantity: number;
+    unit_price: number;
+    total_price: number;
+  }>;
+}
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();
+  const [order, setOrder] = useState<OrderWithItems | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: order, isLoading } = trpc.orders.getById.useQuery(
-    { id: parseInt(id || "0") },
-    { enabled: !!id, refetchInterval: 10000 }
-  );
+  useEffect(() => {
+    if (!id) return;
+    const fetchOrder = async () => {
+      try {
+        const data = await getOrderById(parseInt(id));
+        setOrder(data as any);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchOrder();
+    // Auto-refresh every 10 seconds
+    const interval = setInterval(fetchOrder, 10000);
+    return () => clearInterval(interval);
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -53,7 +88,7 @@ export default function OrderDetailScreen() {
         <View style={{ backgroundColor: colors.primary, borderRadius: 16, padding: 20, marginBottom: 16 }}>
           <Text style={{ fontFamily: FONT_FAMILY.regular, color: "rgba(255,255,255,0.8)", fontSize: 13, textAlign: "center" }}>رقم الطلب</Text>
           <Text style={{ fontFamily: FONT_FAMILY.bold, color: "#fff", fontSize: 24, textAlign: "center", marginTop: 4 }}>
-            #{order.orderNumber}
+            #{order.order_number}
           </Text>
           <View style={{ alignItems: "center", marginTop: 12 }}>
             <View style={{ backgroundColor: "rgba(255,255,255,0.2)", paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20 }}>
@@ -113,17 +148,17 @@ export default function OrderDetailScreen() {
           {(order as any).items?.map((item: any) => (
             <View key={item.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border }}>
               <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 13, color: colors.primary }}>
-                {formatPrice(item.totalPrice)}
+                {formatPrice(item.total_price)}
               </Text>
               <View style={{ alignItems: "flex-end" }}>
-                <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 14, color: colors.foreground }}>{item.productName}</Text>
-                <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted }}>{item.productSize} x {item.quantity}</Text>
+                <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 14, color: colors.foreground }}>{item.product_name}</Text>
+                <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted }}>{item.product_size} x {item.quantity}</Text>
               </View>
             </View>
           ))}
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 8 }}>
             <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 18, color: colors.primary }}>
-              {formatPrice(order.totalAmount)}
+              {formatPrice(order.total_amount)}
             </Text>
             <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 15, color: colors.foreground }}>
               الإجمالي
@@ -136,9 +171,9 @@ export default function OrderDetailScreen() {
           <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 15, color: colors.foreground, textAlign: "right", marginBottom: 12 }}>
             بيانات العميل
           </Text>
-          <InfoRow label="الاسم" value={order.customerName} colors={colors} />
-          <InfoRow label="الجوال" value={order.customerPhone} colors={colors} />
-          <InfoRow label="العنوان" value={order.customerAddress} colors={colors} />
+          <InfoRow label="الاسم" value={order.customer_name} colors={colors} />
+          <InfoRow label="الجوال" value={order.customer_phone} colors={colors} />
+          <InfoRow label="العنوان" value={order.customer_address} colors={colors} />
           {order.notes && <InfoRow label="ملاحظات" value={order.notes} colors={colors} />}
         </View>
       </ScrollView>

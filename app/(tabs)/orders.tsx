@@ -2,11 +2,12 @@ import { Text, View, TouchableOpacity, ActivityIndicator, TextInput, FlatList } 
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { trpc } from "@/lib/trpc";
+import { getOrdersByPhone } from "@/lib/supabase";
 import { useAppStore } from "@/lib/store";
 import { formatPrice, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, validateYemeniPhone } from "@/lib/validation";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FONT_FAMILY } from "@/lib/fonts";
+import type { Order } from "@/lib/supabase-types";
 
 export default function OrdersScreen() {
   const router = useRouter();
@@ -15,11 +16,27 @@ export default function OrdersScreen() {
   const [phone, setPhone] = useState(state.user?.phone || "");
   const [searchPhone, setSearchPhone] = useState(state.user?.phone || "");
   const [phoneError, setPhoneError] = useState("");
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { data: orders, isLoading } = trpc.orders.getByPhone.useQuery(
-    { phone: searchPhone },
-    { enabled: !!searchPhone && validateYemeniPhone(searchPhone).valid }
-  );
+  const fetchOrders = useCallback(async (phoneNum: string) => {
+    if (!phoneNum || !validateYemeniPhone(phoneNum).valid) return;
+    setIsLoading(true);
+    try {
+      const data = await getOrdersByPhone(phoneNum);
+      setOrders(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (searchPhone && validateYemeniPhone(searchPhone).valid) {
+      fetchOrders(searchPhone);
+    }
+  }, [searchPhone, fetchOrders]);
 
   const handleSearch = () => {
     const validation = validateYemeniPhone(phone);
@@ -58,15 +75,15 @@ export default function OrdersScreen() {
           </Text>
         </View>
         <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 14, color: colors.foreground }}>
-          #{order.orderNumber}
+          #{order.order_number}
         </Text>
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 10 }}>
         <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 14, color: colors.primary }}>
-          {formatPrice(order.totalAmount)}
+          {formatPrice(order.total_amount)}
         </Text>
         <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted }}>
-          {new Date(order.createdAt).toLocaleDateString("ar-YE")}
+          {new Date(order.created_at).toLocaleDateString("ar-YE")}
         </Text>
       </View>
     </TouchableOpacity>

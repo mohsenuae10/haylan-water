@@ -3,11 +3,12 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { trpc } from "@/lib/trpc";
+import { getProducts } from "@/lib/supabase";
 import { formatPrice } from "@/lib/validation";
 import { useAppStore } from "@/lib/store";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FONT_FAMILY } from "@/lib/fonts";
+import type { Product } from "@/lib/supabase-types";
 
 const LOGO_IMAGE = require("@/assets/images/haylan-logo.png");
 const PRODUCT_IMAGE = require("@/assets/images/product-carton.png");
@@ -18,11 +19,14 @@ export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
   const { addToCart } = useAppStore();
-  const { data: products, isLoading } = trpc.products.list.useQuery();
-  const seedMutation = trpc.seed.products.useMutation();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    seedMutation.mutate();
+    getProducts(true)
+      .then(setProducts)
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
   }, []);
 
   return (
@@ -110,7 +114,7 @@ export default function HomeScreen() {
                   </View>
                   <View style={{ padding: 12 }}>
                     <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 14, color: colors.foreground, textAlign: "right" }}>
-                      {product.nameAr}
+                      {product.name_ar}
                     </Text>
                     <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted, textAlign: "right", marginTop: 2 }}>
                       {product.size}
@@ -126,11 +130,11 @@ export default function HomeScreen() {
                         onPress={() => {
                           addToCart({
                             productId: product.id,
-                            productName: product.nameAr,
+                            productName: product.name_ar,
                             productSize: product.size,
-                            imageUrl: product.imageUrl || "",
+                            imageUrl: product.image_url || "",
                             quantity: 1,
-                            unitPrice: parseFloat(product.price),
+                            unitPrice: Number(product.price),
                           });
                           router.push("/order" as any);
                         }}

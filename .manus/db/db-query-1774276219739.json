@@ -1,9 +1,0 @@
-{
-  "query": "DELETE FROM products; DELETE FROM app_users WHERE role = 'admin';",
-  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user xBkK1BL7g7atTXh.83550191f623 --database e5nvExn8ER8JEKraLFKZX9 --execute DELETE FROM products; DELETE FROM app_users WHERE role = 'admin';",
-  "rows": [],
-  "messages": [],
-  "stdout": "",
-  "stderr": "",
-  "execution_time_ms": 3990
-}

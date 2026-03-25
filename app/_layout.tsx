@@ -17,7 +17,6 @@ import {
 import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 
-import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { AppProvider } from "@/lib/store";
 import { useCairoFonts } from "@/lib/fonts";
@@ -71,7 +70,6 @@ export default function RootLayout() {
         },
       }),
   );
-  const [trpcClient] = useState(() => createTRPCClient());
 
   const providerInitialMetrics = useMemo(() => {
     const metrics = initialWindowMetrics ?? { insets: initialInsets, frame: initialFrame };
@@ -91,24 +89,22 @@ export default function RootLayout() {
 
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <trpc.Provider client={trpcClient} queryClient={queryClient}>
-        <QueryClientProvider client={queryClient}>
-          <AppProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="oauth/callback" />
-              <Stack.Screen name="product/[id]" options={{ presentation: "card" }} />
-              <Stack.Screen name="order" options={{ presentation: "card" }} />
-              <Stack.Screen name="order-success" options={{ presentation: "card" }} />
-              <Stack.Screen name="order-detail/[id]" options={{ presentation: "card" }} />
-              <Stack.Screen name="login" options={{ presentation: "card" }} />
-              <Stack.Screen name="register" options={{ presentation: "card" }} />
-              <Stack.Screen name="admin" options={{ presentation: "card" }} />
-            </Stack>
-          </AppProvider>
-          <StatusBar style="auto" />
-        </QueryClientProvider>
-      </trpc.Provider>
+      <QueryClientProvider client={queryClient}>
+        <AppProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="oauth/callback" />
+            <Stack.Screen name="product/[id]" options={{ presentation: "card" }} />
+            <Stack.Screen name="order" options={{ presentation: "card" }} />
+            <Stack.Screen name="order-success" options={{ presentation: "card" }} />
+            <Stack.Screen name="order-detail/[id]" options={{ presentation: "card" }} />
+            <Stack.Screen name="login" options={{ presentation: "card" }} />
+            <Stack.Screen name="register" options={{ presentation: "card" }} />
+            <Stack.Screen name="admin" options={{ presentation: "card" }} />
+          </Stack>
+        </AppProvider>
+        <StatusBar style="auto" />
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 

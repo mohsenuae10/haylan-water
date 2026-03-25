@@ -3,13 +3,14 @@ import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { trpc } from "@/lib/trpc";
+import { getProductById } from "@/lib/supabase";
 import { formatPrice } from "@/lib/validation";
 import { useAppStore } from "@/lib/store";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FONT_FAMILY } from "@/lib/fonts";
+import type { Product } from "@/lib/supabase-types";
 
 const PRODUCT_IMAGE = require("@/assets/images/product-carton.png");
 
@@ -20,11 +21,17 @@ export default function ProductDetailScreen() {
   const insets = useSafeAreaInsets();
   const { addToCart } = useAppStore();
   const [quantity, setQuantity] = useState(1);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const { data: product, isLoading } = trpc.products.getById.useQuery(
-    { id: parseInt(id || "0") },
-    { enabled: !!id }
-  );
+  useEffect(() => {
+    if (id) {
+      getProductById(parseInt(id))
+        .then(setProduct)
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [id]);
 
   if (isLoading) {
     return (
@@ -42,7 +49,7 @@ export default function ProductDetailScreen() {
     );
   }
 
-  const totalPrice = parseFloat(product.price) * quantity;
+  const totalPrice = Number(product.price) * quantity;
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
@@ -77,7 +84,7 @@ export default function ProductDetailScreen() {
         {/* Product Info */}
         <View style={{ paddingHorizontal: 20, marginTop: 16 }}>
           <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 24, color: colors.foreground, textAlign: "right" }}>
-            {product.nameAr}
+            {product.name_ar}
           </Text>
           <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 14, color: colors.muted, textAlign: "right", marginTop: 4 }}>
             {product.size}
@@ -86,9 +93,9 @@ export default function ProductDetailScreen() {
             {formatPrice(product.price)}
           </Text>
 
-          {product.descriptionAr && (
+          {product.description_ar && (
             <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 14, color: colors.muted, textAlign: "right", marginTop: 16, lineHeight: 22 }}>
-              {product.descriptionAr}
+              {product.description_ar}
             </Text>
           )}
 
@@ -165,11 +172,11 @@ export default function ProductDetailScreen() {
           onPress={() => {
             addToCart({
               productId: product.id,
-              productName: product.nameAr,
+              productName: product.name_ar,
               productSize: product.size,
-              imageUrl: product.imageUrl || "",
+              imageUrl: product.image_url || "",
               quantity,
-              unitPrice: parseFloat(product.price),
+              unitPrice: Number(product.price),
             });
             router.push("/order" as any);
           }}

@@ -2,11 +2,12 @@ import { Text, View, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Tex
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { trpc } from "@/lib/trpc";
+import { getAllOrders, getOrderStats, updateOrderStatus, getProducts, updateProduct } from "@/lib/supabase";
 import { formatPrice, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "@/lib/validation";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FONT_FAMILY } from "@/lib/fonts";
+import type { Order, Product } from "@/lib/supabase-types";
 
 const STATUSES = ["all", "new", "processing", "delivering", "delivered"] as const;
 const STATUS_FILTER_LABELS: Record<string, string> = {
@@ -82,11 +83,29 @@ export default function AdminScreen() {
 }
 
 function AdminOrders({ statusFilter, setStatusFilter, colors, router }: any) {
-  const { data: orders, isLoading, refetch } = trpc.orders.listAll.useQuery({ status: statusFilter });
-  const { data: stats } = trpc.orders.stats.useQuery();
-  const updateStatusMutation = trpc.orders.updateStatus.useMutation({
-    onSuccess: () => refetch(),
-  });
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [ordersData, statsData] = await Promise.all([
+        getAllOrders(statusFilter),
+        getOrderStats(),
+      ]);
+      setOrders(ordersData);
+      setStats(statsData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [statusFilter]);
+
+  useEffect(() => {
+    setIsLoading(true);
+    fetchData();
+  }, [fetchData]);
 
   const handleStatusChange = (orderId: number, currentStatus: string) => {
     const nextStatuses: Record<string, string> = {
@@ -104,7 +123,14 @@ function AdminOrders({ statusFilter, setStatusFilter, colors, router }: any) {
         { text: "إلغاء", style: "cancel" },
         {
           text: "تأكيد",
-          onPress: () => updateStatusMutation.mutate({ id: orderId, status: next as any }),
+          onPress: async () => {
+            try {
+              await updateOrderStatus(orderId, next as any);
+              fetchData();
+            } catch (err) {
+              Alert.alert("خطأ", "حدث خطأ أثناء تحديث الحالة");
+            }
+          },
         },
       ]
     );
@@ -173,15 +199,15 @@ function AdminOrders({ statusFilter, setStatusFilter, colors, router }: any) {
                     {ORDER_STATUS_LABELS[order.status]}
                   </Text>
                 </View>
-                <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 14, color: colors.foreground }}>#{order.orderNumber}</Text>
+                <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 14, color: colors.foreground }}>#{order.order_number}</Text>
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 8 }}>
-                <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 13, color: colors.muted }}>{order.customerPhone}</Text>
-                <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 13, color: colors.foreground }}>{order.customerName}</Text>
+                <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 13, color: colors.muted }}>{order.customer_phone}</Text>
+                <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 13, color: colors.foreground }}>{order.customer_name}</Text>
               </View>
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 4 }}>
-                <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted }}>{new Date(order.createdAt).toLocaleDateString("ar-YE")}</Text>
-                <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 14, color: colors.primary }}>{formatPrice(order.totalAmount)}</Text>
+                <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted }}>{new Date(order.created_at).toLocaleDateString("ar-YE")}</Text>
+                <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 14, color: colors.primary }}>{formatPrice(order.total_amount)}</Text>
               </View>
               {order.status !== "delivered" && (
                 <TouchableOpacity
@@ -208,13 +234,35 @@ function AdminOrders({ statusFilter, setStatusFilter, colors, router }: any) {
 }
 
 function AdminProducts({ colors }: any) {
-  const { data: products, isLoading, refetch } = trpc.products.list.useQuery();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editPrice, setEditPrice] = useState("");
 
-  const updateMutation = trpc.products.update.useMutation({
-    onSuccess: () => { refetch(); setEditingId(null); },
-  });
+  const fetchProducts = useCallback(async () => {
+    try {
+      const data = await getProducts(true);
+      setProducts(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
+
+  const handleSavePrice = async (id: number) => {
+    try {
+      await updateProduct(id, { price: parseFloat(editPrice) });
+      setEditingId(null);
+      fetchProducts();
+    } catch (err) {
+      Alert.alert("خطأ", "حدث خطأ أثناء تحديث السعر");
+    }
+  };
 
   return (
     <View style={{ flex: 1, paddingHorizontal: 16 }}>
@@ -230,13 +278,13 @@ function AdminProducts({ colors }: any) {
             <View style={{ backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: colors.border }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <TouchableOpacity
-                  onPress={() => { setEditingId(product.id); setEditPrice(product.price); }}
+                  onPress={() => { setEditingId(product.id); setEditPrice(String(product.price)); }}
                   activeOpacity={0.7}
                 >
                   <IconSymbol name="pencil" size={18} color={colors.primary} />
                 </TouchableOpacity>
                 <View style={{ alignItems: "flex-end", flex: 1 }}>
-                  <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 15, color: colors.foreground }}>{product.nameAr}</Text>
+                  <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 15, color: colors.foreground }}>{product.name_ar}</Text>
                   <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 12, color: colors.muted }}>{product.size}</Text>
                 </View>
               </View>
@@ -244,7 +292,7 @@ function AdminProducts({ colors }: any) {
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 10, alignItems: "center" }}>
                   <TouchableOpacity
                     style={{ backgroundColor: colors.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 }}
-                    onPress={() => updateMutation.mutate({ id: product.id, price: editPrice })}
+                    onPress={() => handleSavePrice(product.id)}
                     activeOpacity={0.7}
                   >
                     <Text style={{ fontFamily: FONT_FAMILY.semiBold, color: "#fff", fontSize: 12 }}>حفظ</Text>

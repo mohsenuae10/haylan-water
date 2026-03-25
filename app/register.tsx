@@ -14,7 +14,7 @@ import { Image } from "expo-image";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAppStore } from "@/lib/store";
 import { validateYemeniPhone } from "@/lib/validation";
-import { trpc } from "@/lib/trpc";
+import { signUp, getProfile } from "@/lib/supabase";
 import { FONT_FAMILY } from "@/lib/fonts";
 import { useColors } from "@/hooks/use-colors";
 
@@ -29,15 +29,13 @@ export default function RegisterScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
-  const registerMutation = trpc.appAuth.register.useMutation();
-
   const handleRegister = async () => {
     const newErrors: Record<string, string> = {};
     if (!name.trim()) newErrors.name = "الاسم مطلوب";
     const phoneValidation = validateYemeniPhone(phone);
     if (!phoneValidation.valid) newErrors.phone = phoneValidation.message;
     if (!password.trim()) newErrors.password = "كلمة المرور مطلوبة";
-    else if (password.trim().length < 4) newErrors.password = "كلمة المرور يجب أن تكون 4 أحرف على الأقل";
+    else if (password.trim().length < 6) newErrors.password = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
     if (!address.trim()) newErrors.address = "العنوان مطلوب";
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -46,24 +44,29 @@ export default function RegisterScreen() {
     setErrors({});
     setIsLoading(true);
     try {
-      const result = await registerMutation.mutateAsync({
-        name: name.trim(),
+      const result = await signUp({
         phone: phone.trim(),
         password: password.trim(),
+        name: name.trim(),
         address: address.trim(),
       });
-      login({
-        id: result.id,
-        name: result.name,
-        phone: result.phone,
-        address: result.address,
-        role: result.role as "customer" | "admin",
-        isLoggedIn: true,
-      });
+      if (result.user) {
+        // Small delay to allow trigger to create profile
+        await new Promise(r => setTimeout(r, 500));
+        const profile = await getProfile(result.user.id);
+        login({
+          id: result.user.id,
+          name: name.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          role: (profile?.role || "customer") as "customer" | "admin",
+          isLoggedIn: true,
+        });
+      }
       router.replace("/(tabs)" as any);
     } catch (err: any) {
       const msg = err?.message || "حدث خطأ أثناء إنشاء الحساب";
-      if (msg.includes("مسجل مسبقاً")) {
+      if (msg.includes("مسجل مسبقاً") || msg.includes("already registered")) {
         setErrors({ phone: "رقم الجوال مسجل مسبقاً" });
       } else {
         setErrors({ general: msg });
