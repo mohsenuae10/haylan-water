@@ -301,6 +301,51 @@ export type Database = {
           }
         ];
       };
+      banners: {
+        Row: {
+          id: number;
+          title: string | null;
+          title_ar: string | null;
+          description: string | null;
+          description_ar: string | null;
+          image_url: string;
+          link_type: "none" | "category" | "product" | "url";
+          link_value: string | null;
+          is_active: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          title?: string | null;
+          title_ar?: string | null;
+          description?: string | null;
+          description_ar?: string | null;
+          image_url: string;
+          link_type?: "none" | "category" | "product" | "url";
+          link_value?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          title?: string | null;
+          title_ar?: string | null;
+          description?: string | null;
+          description_ar?: string | null;
+          image_url?: string;
+          link_type?: "none" | "category" | "product" | "url";
+          link_value?: string | null;
+          is_active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -325,4 +370,5 @@ export type Order = Database["public"]["Tables"]["orders"]["Row"];
 export type OrderItem = Database["public"]["Tables"]["order_items"]["Row"];
 export type Notification = Database["public"]["Tables"]["notifications"]["Row"];
 export type Category = Database["public"]["Tables"]["categories"]["Row"];
+export type Banner = Database["public"]["Tables"]["banners"]["Row"];
 export type ProductCategory = "water" | "tissues";

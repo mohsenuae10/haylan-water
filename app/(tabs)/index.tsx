@@ -1,19 +1,22 @@
-import { ScrollView, Text, View, TouchableOpacity, Dimensions, ActivityIndicator } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, Dimensions, ActivityIndicator, FlatList } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
-import { getCategories, getFeaturedProducts } from "@/lib/supabase";
+import { getCategories, getFeaturedProducts, getBanners } from "@/lib/supabase";
 import { formatPrice } from "@/lib/validation";
 import { useAppStore } from "@/lib/store";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { FONT_FAMILY } from "@/lib/fonts";
-import type { Product, Category } from "@/lib/supabase-types";
+import type { Product, Category, Banner } from "@/lib/supabase-types";
 
 const LOGO_IMAGE = require("@/assets/images/haylan-logo.png");
 const PRODUCT_IMAGE = require("@/assets/images/product-carton.png");
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
+const BANNER_WIDTH = SCREEN_WIDTH - 32;
+const BANNER_HEIGHT = 160;
+const BANNER_INTERVAL = 4000; // Auto-slide every 4 seconds
 
 const CATEGORY_STYLES: Record<string, { bg: string; border: string; text: string; iconBg: string }> = {
   water: { bg: "#E3F2FD", border: "#1976D2", text: "#1565C0", iconBg: "#BBDEFB" },
@@ -28,17 +31,52 @@ export default function HomeScreen() {
   const { addToCart } = useAppStore();
   const [categories, setCategories] = useState<Category[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeBannerIndex, setActiveBannerIndex] = useState(0);
+  const bannerListRef = useRef<FlatList>(null);
+  const bannerTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    Promise.all([getCategories(), getFeaturedProducts(6)])
-      .then(([cats, products]) => {
+    Promise.all([getCategories(), getFeaturedProducts(6), getBanners()])
+      .then(([cats, products, bannersData]) => {
         setCategories(cats);
         setFeaturedProducts(products);
+        setBanners(bannersData);
       })
       .catch(console.error)
       .finally(() => setIsLoading(false));
   }, []);
+
+  // Auto-slide banners
+  useEffect(() => {
+    if (banners.length <= 1) return;
+
+    bannerTimerRef.current = setInterval(() => {
+      setActiveBannerIndex((prev) => {
+        const next = (prev + 1) % banners.length;
+        bannerListRef.current?.scrollToIndex({ index: next, animated: true });
+        return next;
+      });
+    }, BANNER_INTERVAL);
+
+    return () => {
+      if (bannerTimerRef.current) clearInterval(bannerTimerRef.current);
+    };
+  }, [banners.length]);
+
+  const onBannerScroll = useCallback((event: any) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / BANNER_WIDTH);
+    setActiveBannerIndex(index);
+  }, []);
+
+  const handleBannerPress = (banner: Banner) => {
+    if (banner.link_type === "category" && banner.link_value) {
+      router.push({ pathname: "/(tabs)/products", params: { category: banner.link_value } } as any);
+    } else if (banner.link_type === "product" && banner.link_value) {
+      router.push(`/product/${banner.link_value}` as any);
+    }
+  };
 
   const getCatStyle = (id: string) => CATEGORY_STYLES[id] || DEFAULT_STYLE;
 
@@ -56,24 +94,95 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* Promo Banner */}
-        <View style={{ marginHorizontal: 16, marginTop: 12, borderRadius: 16, overflow: "hidden", backgroundColor: colors.primary, padding: 18 }}>
-          <Text style={{ fontFamily: FONT_FAMILY.bold, color: "#fff", fontSize: 18, textAlign: "right" }}>
-            🎉 جديد! مناديل هيلان
-          </Text>
-          <Text style={{ fontFamily: FONT_FAMILY.regular, color: "rgba(255,255,255,0.85)", fontSize: 13, textAlign: "right", marginTop: 4 }}>
-            الآن يمكنك طلب مناديل هيلان الناعمة مع طلب المياه في نفس التطبيق
-          </Text>
-          <TouchableOpacity
-            onPress={() => router.push({ pathname: "/(tabs)/products", params: { category: "tissues" } } as any)}
-            style={{ backgroundColor: "#fff", borderRadius: 10, paddingVertical: 8, paddingHorizontal: 16, alignSelf: "flex-start", marginTop: 12 }}
-            activeOpacity={0.8}
-          >
-            <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 13, color: colors.primary }}>
-              تسوق المناديل ←
+        {/* Banner Carousel */}
+        {banners.length > 0 ? (
+          <View style={{ marginHorizontal: 16, marginTop: 12 }}>
+            <FlatList
+              ref={bannerListRef}
+              data={banners}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={onBannerScroll}
+              keyExtractor={(item) => item.id.toString()}
+              snapToInterval={BANNER_WIDTH}
+              decelerationRate="fast"
+              getItemLayout={(_, index) => ({
+                length: BANNER_WIDTH,
+                offset: BANNER_WIDTH * index,
+                index,
+              })}
+              renderItem={({ item: banner }) => (
+                <TouchableOpacity
+                  activeOpacity={banner.link_type !== "none" ? 0.85 : 1}
+                  onPress={() => handleBannerPress(banner)}
+                  style={{ width: BANNER_WIDTH, height: BANNER_HEIGHT, borderRadius: 16, overflow: "hidden" }}
+                >
+                  <Image
+                    source={{ uri: banner.image_url }}
+                    style={{ width: "100%", height: "100%" }}
+                    contentFit="cover"
+                    transition={300}
+                  />
+                  {/* Banner overlay text */}
+                  {(banner.title_ar || banner.description_ar) && (
+                    <View style={{
+                      position: "absolute", bottom: 0, left: 0, right: 0,
+                      backgroundColor: "rgba(0,0,0,0.45)",
+                      paddingHorizontal: 14, paddingVertical: 10,
+                    }}>
+                      {banner.title_ar && (
+                        <Text style={{ fontFamily: FONT_FAMILY.bold, color: "#fff", fontSize: 16, textAlign: "right" }}>
+                          {banner.title_ar}
+                        </Text>
+                      )}
+                      {banner.description_ar && (
+                        <Text style={{ fontFamily: FONT_FAMILY.regular, color: "rgba(255,255,255,0.9)", fontSize: 12, textAlign: "right", marginTop: 2 }} numberOfLines={1}>
+                          {banner.description_ar}
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )}
+            />
+            {/* Dot Indicators */}
+            {banners.length > 1 && (
+              <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 8, gap: 6 }}>
+                {banners.map((_, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      width: activeBannerIndex === i ? 20 : 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: activeBannerIndex === i ? colors.primary : colors.border,
+                    }}
+                  />
+                ))}
+              </View>
+            )}
+          </View>
+        ) : (
+          /* Fallback static promo when no banners exist */
+          <View style={{ marginHorizontal: 16, marginTop: 12, borderRadius: 16, overflow: "hidden", backgroundColor: colors.primary, padding: 18 }}>
+            <Text style={{ fontFamily: FONT_FAMILY.bold, color: "#fff", fontSize: 18, textAlign: "right" }}>
+              🎉 جديد! مناديل هيلان
             </Text>
-          </TouchableOpacity>
-        </View>
+            <Text style={{ fontFamily: FONT_FAMILY.regular, color: "rgba(255,255,255,0.85)", fontSize: 13, textAlign: "right", marginTop: 4 }}>
+              الآن يمكنك طلب مناديل هيلان الناعمة مع طلب المياه في نفس التطبيق
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push({ pathname: "/(tabs)/products", params: { category: "tissues" } } as any)}
+              style={{ backgroundColor: "#fff", borderRadius: 10, paddingVertical: 8, paddingHorizontal: 16, alignSelf: "flex-start", marginTop: 12 }}
+              activeOpacity={0.8}
+            >
+              <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 13, color: colors.primary }}>
+                تسوق المناديل ←
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Categories Section */}
         <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
@@ -102,9 +211,15 @@ export default function HomeScreen() {
                     }}
                     activeOpacity={0.7}
                   >
-                    <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: style.iconBg, justifyContent: "center", alignItems: "center", marginBottom: 8 }}>
-                      <Text style={{ fontSize: 28 }}>{cat.icon}</Text>
-                    </View>
+                    {cat.image_url ? (
+                      <View style={{ width: 56, height: 56, borderRadius: 28, overflow: "hidden", marginBottom: 8, borderWidth: 2, borderColor: style.border }}>
+                        <Image source={{ uri: cat.image_url }} style={{ width: 56, height: 56 }} contentFit="cover" />
+                      </View>
+                    ) : (
+                      <View style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: style.iconBg, justifyContent: "center", alignItems: "center", marginBottom: 8 }}>
+                        <Text style={{ fontSize: 28 }}>{cat.icon}</Text>
+                      </View>
+                    )}
                     <Text style={{ fontFamily: FONT_FAMILY.bold, fontSize: 16, color: style.text }}>
                       {cat.name_ar}
                     </Text>

@@ -521,3 +521,167 @@ export async function markNotificationRead(id: number) {
 
   if (error) throw new Error(error.message);
 }
+
+// ============ Banners ============
+
+export async function getBanners(activeOnly = true) {
+  let query = supabase
+    .from("banners")
+    .select("*")
+    .order("sort_order", { ascending: true });
+
+  if (activeOnly) {
+    query = query.eq("is_active", true);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("Error fetching banners:", error);
+    return [];
+  }
+  return data || [];
+}
+
+export async function createBanner(banner: {
+  title?: string;
+  title_ar?: string;
+  description?: string;
+  description_ar?: string;
+  image_url: string;
+  link_type?: "none" | "category" | "product" | "url";
+  link_value?: string;
+  sort_order?: number;
+  is_active?: boolean;
+}) {
+  const { data, error } = await supabase
+    .from("banners")
+    .insert(banner)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function updateBanner(
+  id: number,
+  updates: Partial<{
+    title: string;
+    title_ar: string;
+    description: string;
+    description_ar: string;
+    image_url: string;
+    link_type: "none" | "category" | "product" | "url";
+    link_value: string;
+    sort_order: number;
+    is_active: boolean;
+  }>
+) {
+  const { data, error } = await supabase
+    .from("banners")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+export async function deleteBanner(id: number) {
+  const { error } = await supabase
+    .from("banners")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Upload a banner image to Supabase Storage.
+ */
+export async function uploadBannerImage(uri: string, fileName?: string): Promise<string> {
+  const ext = uri.split(".").pop()?.toLowerCase() || "jpg";
+  const name = fileName || `banner_${Date.now()}.${ext}`;
+  const filePath = `banners/${name}`;
+
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  const arrayBuffer = await new Response(blob).arrayBuffer();
+
+  const { error: uploadError } = await supabase.storage
+    .from("banners")
+    .upload(filePath, arrayBuffer, {
+      contentType: `image/${ext === "png" ? "png" : ext === "gif" ? "gif" : ext === "webp" ? "webp" : "jpeg"}`,
+      upsert: true,
+    });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data } = supabase.storage
+    .from("banners")
+    .getPublicUrl(filePath);
+
+  return data.publicUrl;
+}
+
+// ============ Category Images ============
+
+/**
+ * Upload a category image to Supabase Storage and update the category.
+ */
+export async function uploadCategoryImage(uri: string, categoryId: string): Promise<string> {
+  const ext = uri.split(".").pop()?.toLowerCase() || "jpg";
+  const name = `category_${categoryId}_${Date.now()}.${ext}`;
+  const filePath = `categories/${name}`;
+
+  const response = await fetch(uri);
+  const blob = await response.blob();
+  const arrayBuffer = await new Response(blob).arrayBuffer();
+
+  const { error: uploadError } = await supabase.storage
+    .from("category-images")
+    .upload(filePath, arrayBuffer, {
+      contentType: `image/${ext === "png" ? "png" : "jpeg"}`,
+      upsert: true,
+    });
+
+  if (uploadError) throw new Error(uploadError.message);
+
+  const { data: urlData } = supabase.storage
+    .from("category-images")
+    .getPublicUrl(filePath);
+
+  // Update category record with image_url
+  const { error: updateError } = await supabase
+    .from("categories")
+    .update({ image_url: urlData.publicUrl })
+    .eq("id", categoryId);
+
+  if (updateError) throw new Error(updateError.message);
+
+  return urlData.publicUrl;
+}
+
+export async function updateCategory(
+  id: string,
+  updates: Partial<{
+    name_ar: string;
+    name_en: string;
+    icon: string;
+    image_url: string | null;
+    description_ar: string;
+    sort_order: number;
+    is_active: boolean;
+  }>
+) {
+  const { data, error } = await supabase
+    .from("categories")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
