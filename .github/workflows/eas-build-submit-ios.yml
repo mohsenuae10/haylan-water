@@ -41,6 +41,9 @@ jobs:
           echo "$ASC_API_KEY" > AuthKey_M2TYDG9BL3.p8
           chmod 600 AuthKey_M2TYDG9BL3.p8
 
+      - name: Push App Store metadata and screenshots
+        run: eas metadata:push --non-interactive
+
       - name: Build iOS app
         run: eas build --platform ios --profile production --non-interactive
 

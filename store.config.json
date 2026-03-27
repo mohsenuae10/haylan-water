@@ -5,20 +5,80 @@
         "default": {
           "locale": "ar-SA"
         },
+        "copyright": "2024 Haylan Group",
+        "primaryCategory": "FOOD_AND_DRINK",
+        "secondaryCategory": "LIFESTYLE",
+        "contentRightsHasThirdPartyContent": false,
+        "ageRatingOverride": "4+",
+        "privacyPolicyUrl": "https://mohsenuae10.github.io/haylan-water/privacy-policy.html",
+        "supportUrl": "https://mohsenuae10.github.io/haylan-water/privacy-policy.html",
+        "marketingUrl": "https://mohsenuae10.github.io/haylan-water/",
         "locales": {
           "ar-SA": {
             "title": "مجموعة هيلان",
             "subtitle": "توصيل المياه",
-            "description": "تطبيق مجموعة هيلان لطلب وتوصيل المياه. يتيح لك التطبيق طلب المياه بسهولة وتتبع طلباتك.",
-            "keywords": ["مياه", "توصيل", "هيلان", "طلب", "مياه منزلية"],
-            "releaseNotes": "تحسينات على الأداء وإصلاح الأخطاء"
+            "description": "تطبيق مجموعة هيلان لطلب وتوصيل المياه. يتيح لك التطبيق طلب المياه بسهولة وتتبع طلباتك في الوقت الفعلي. استمتع بخدمة توصيل سريعة وموثوقة لمنزلك أو مكتبك.",
+            "keywords": ["مياه", "توصيل", "هيلان", "طلب", "مياه منزلية", "مياه شرب", "توصيل منزلي"],
+            "releaseNotes": "تحسينات على الأداء وإصلاح الأخطاء",
+            "screenshots": {
+              "iphone67": [
+                "assets/store-screenshots/iphone67/screen1.png",
+                "assets/store-screenshots/iphone67/screen2.png",
+                "assets/store-screenshots/iphone67/screen3.png",
+                "assets/store-screenshots/iphone67/screen4.png"
+              ],
+              "iphone65": [
+                "assets/store-screenshots/iphone65/screen1.png",
+                "assets/store-screenshots/iphone65/screen2.png",
+                "assets/store-screenshots/iphone65/screen3.png",
+                "assets/store-screenshots/iphone65/screen4.png"
+              ],
+              "iphone55": [
+                "assets/store-screenshots/iphone55/screen1.png",
+                "assets/store-screenshots/iphone55/screen2.png",
+                "assets/store-screenshots/iphone55/screen3.png",
+                "assets/store-screenshots/iphone55/screen4.png"
+              ],
+              "ipadPro129": [
+                "assets/store-screenshots/ipadPro129/screen1.png",
+                "assets/store-screenshots/ipadPro129/screen2.png",
+                "assets/store-screenshots/ipadPro129/screen3.png",
+                "assets/store-screenshots/ipadPro129/screen4.png"
+              ]
+            }
           },
           "en-US": {
             "title": "Haylan Group",
             "subtitle": "Water Delivery",
-            "description": "Haylan Group app for ordering and delivering water. The app allows you to easily order water and track your orders.",
-            "keywords": ["water", "delivery", "haylan", "order", "home water"],
-            "releaseNotes": "Performance improvements and bug fixes"
+            "description": "Haylan Group app for ordering and delivering water. The app allows you to easily order water and track your orders in real-time. Enjoy fast and reliable delivery service to your home or office.",
+            "keywords": ["water", "delivery", "haylan", "order", "home water", "drinking water", "water delivery"],
+            "releaseNotes": "Performance improvements and bug fixes",
+            "screenshots": {
+              "iphone67": [
+                "assets/store-screenshots/iphone67/screen1.png",
+                "assets/store-screenshots/iphone67/screen2.png",
+                "assets/store-screenshots/iphone67/screen3.png",
+                "assets/store-screenshots/iphone67/screen4.png"
+              ],
+              "iphone65": [
+                "assets/store-screenshots/iphone65/screen1.png",
+                "assets/store-screenshots/iphone65/screen2.png",
+                "assets/store-screenshots/iphone65/screen3.png",
+                "assets/store-screenshots/iphone65/screen4.png"
+              ],
+              "iphone55": [
+                "assets/store-screenshots/iphone55/screen1.png",
+                "assets/store-screenshots/iphone55/screen2.png",
+                "assets/store-screenshots/iphone55/screen3.png",
+                "assets/store-screenshots/iphone55/screen4.png"
+              ],
+              "ipadPro129": [
+                "assets/store-screenshots/ipadPro129/screen1.png",
+                "assets/store-screenshots/ipadPro129/screen2.png",
+                "assets/store-screenshots/ipadPro129/screen3.png",
+                "assets/store-screenshots/ipadPro129/screen4.png"
+              ]
+            }
           }
         }
       }
