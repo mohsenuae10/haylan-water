@@ -32,6 +32,11 @@
       "android": {
         "serviceAccountKeyPath": "./google-services.json",
         "track": "internal"
+      },
+      "ios": {
+        "ascApiKeyPath": "./AuthKey_M2TYDG9BL3.p8",
+        "ascApiKeyIssuerId": "357d12f0-8971-458f-996a-3fe430476d64",
+        "ascApiKeyId": "M2TYDG9BL3"
       }
     }
   }
