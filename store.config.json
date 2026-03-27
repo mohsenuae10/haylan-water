@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "ios": {
+      "metaData": {
+        "default": {
+          "locale": "ar-SA"
+        },
+        "locales": {
+          "ar-SA": {
+            "title": "مجموعة هيلان",
+            "subtitle": "توصيل المياه",
+            "description": "تطبيق مجموعة هيلان لطلب وتوصيل المياه. يتيح لك التطبيق طلب المياه بسهولة وتتبع طلباتك.",
+            "keywords": ["مياه", "توصيل", "هيلان", "طلب", "مياه منزلية"],
+            "releaseNotes": "تحسينات على الأداء وإصلاح الأخطاء"
+          },
+          "en-US": {
+            "title": "Haylan Group",
+            "subtitle": "Water Delivery",
+            "description": "Haylan Group app for ordering and delivering water. The app allows you to easily order water and track your orders.",
+            "keywords": ["water", "delivery", "haylan", "order", "home water"],
+            "releaseNotes": "Performance improvements and bug fixes"
+          }
+        }
+      }
+    }
+  }
+}

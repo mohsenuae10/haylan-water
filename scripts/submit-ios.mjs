@@ -2,7 +2,7 @@ import pty from 'node-pty';
 import { resolve } from 'path';
 
 const APPLE_ID = 'alkurbi2014@hotmail.com';
-const APP_SPECIFIC_PASSWORD = 'nicz-uwnu-mkoc-dfby';
+const APPLE_PASSWORD = 'nicz-uwnu-mkoc-afby';
 const ASC_KEY_ID = 'M2TYDG9BL3';
 const ASC_ISSUER_ID = '357d12f0-8971-458f-996a-3fe430476d64';
 const ASC_KEY_PATH = resolve('./AuthKey_M2TYDG9BL3.p8');
@@ -16,7 +16,9 @@ function stripAnsi(str) {
 // Flexible prompts for eas submit --platform ios --latest
 const prompts = [
   { id: 'appleId', match: /\? .*Apple ID/i, answer: APPLE_ID, type: 'text', used: false },
-  { id: 'appPassword', match: /password|app.specific/i, answer: APP_SPECIFIC_PASSWORD, type: 'text', used: false },
+  { id: 'appPassword', match: /Password \(for/i, answer: APPLE_PASSWORD, type: 'text', used: false },
+  { id: 'tryAgain', match: /Would you like to try again/i, answer: null, type: 'select_yes', used: false },
+  { id: 'twoFA', match: /verification code|two.factor|2FA|trusted.*device/i, answer: '__ASK_USER__', type: 'text', used: false },
   { id: 'keyId', match: /\? .*Key ID/i, answer: ASC_KEY_ID, type: 'text', used: false },
   { id: 'issuerId', match: /\? .*Issuer ID/i, answer: ASC_ISSUER_ID, type: 'text', used: false },
   { id: 'keyPath', match: /\? .*\.p8|\? .*Key Path/i, answer: ASC_KEY_PATH, type: 'text', used: false },
@@ -44,7 +46,7 @@ const proc = pty.spawn('powershell.exe', [
   env: {
     ...process.env,
     EXPO_APPLE_ID: APPLE_ID,
-    EXPO_APPLE_APP_SPECIFIC_PASSWORD: APP_SPECIFIC_PASSWORD,
+    EXPO_APPLE_APP_SPECIFIC_PASSWORD: APPLE_PASSWORD,
     EXPO_ASC_API_KEY_PATH: ASC_KEY_PATH,
     EXPO_ASC_API_KEY_ISSUER_ID: ASC_ISSUER_ID,
     EXPO_ASC_API_KEY_ID: ASC_KEY_ID,
@@ -74,8 +76,26 @@ async function tryMatch() {
   await sleep(1500);
 
   if (prompt.type === 'text') {
-    console.log(`\n>>> [${prompt.id}] Typing: "${prompt.answer}"`);
-    proc.write(prompt.answer + '\r');
+    if (prompt.answer === '__ASK_USER__') {
+      console.log(`\n>>> [${prompt.id}] Waiting for user input (2FA code)...`);
+      console.log('>>> Please enter the 2FA code sent to your device:');
+      // Read from real stdin
+      const readline = await import('readline');
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      const code = await new Promise(r => rl.question('2FA Code: ', r));
+      rl.close();
+      console.log(`>>> [${prompt.id}] Typing 2FA code`);
+      proc.write(code + '\r');
+    } else {
+      console.log(`\n>>> [${prompt.id}] Typing: "${prompt.answer}"`);
+      proc.write(prompt.answer + '\r');
+    }
+  } else if (prompt.type === 'select_yes') {
+    // no / yes format - press right arrow then enter to select "yes"
+    console.log(`\n>>> [${prompt.id}] Selecting: yes`);
+    proc.write('\x1b[C'); // right arrow to "yes"
+    await sleep(500);
+    proc.write('\r');
   } else if (prompt.type === 'select') {
     const count = prompt.downCount || 0;
     console.log(`\n>>> [${prompt.id}] Select (down x${count} + Enter)`);
