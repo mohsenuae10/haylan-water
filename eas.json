@@ -34,6 +34,7 @@
         "track": "internal"
       },
       "ios": {
+        "ascAppId": "6761268455",
         "ascApiKeyPath": "./AuthKey_M2TYDG9BL3.p8",
         "ascApiKeyIssuerId": "357d12f0-8971-458f-996a-3fe430476d64",
         "ascApiKeyId": "M2TYDG9BL3"
@@ -41,6 +42,7 @@
     },
     "testflight": {
       "ios": {
+        "ascAppId": "6761268455",
         "ascApiKeyPath": "./AuthKey_M2TYDG9BL3.p8",
         "ascApiKeyIssuerId": "357d12f0-8971-458f-996a-3fe430476d64",
         "ascApiKeyId": "M2TYDG9BL3"

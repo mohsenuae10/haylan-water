@@ -76,26 +76,8 @@ async function tryMatch() {
   await sleep(1500);
 
   if (prompt.type === 'text') {
-    if (prompt.answer === '__ASK_USER__') {
-      console.log(`\n>>> [${prompt.id}] Waiting for user input (2FA code)...`);
-      console.log('>>> Please enter the 2FA code sent to your device:');
-      // Read from real stdin
-      const readline = await import('readline');
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      const code = await new Promise(r => rl.question('2FA Code: ', r));
-      rl.close();
-      console.log(`>>> [${prompt.id}] Typing 2FA code`);
-      proc.write(code + '\r');
-    } else {
-      console.log(`\n>>> [${prompt.id}] Typing: "${prompt.answer}"`);
-      proc.write(prompt.answer + '\r');
-    }
-  } else if (prompt.type === 'select_yes') {
-    // no / yes format - press right arrow then enter to select "yes"
-    console.log(`\n>>> [${prompt.id}] Selecting: yes`);
-    proc.write('\x1b[C'); // right arrow to "yes"
-    await sleep(500);
-    proc.write('\r');
+    console.log(`\n>>> [${prompt.id}] Typing: "${prompt.answer}"`);
+    proc.write(prompt.answer + '\r');
   } else if (prompt.type === 'select') {
     const count = prompt.downCount || 0;
     console.log(`\n>>> [${prompt.id}] Select (down x${count} + Enter)`);
