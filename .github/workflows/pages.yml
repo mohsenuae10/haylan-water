@@ -1,9 +1,12 @@
-name: Deploy Privacy Policy to GitHub Pages
+name: Deploy Pages to GitHub Pages
 
 on:
   push:
     branches: ["main"]
-    paths: ["privacy-policy.html"]
+    paths:
+      - "privacy-policy.html"
+      - "delete-account.html"
+      - ".github/workflows/pages.yml"
   workflow_dispatch:
 
 permissions:
@@ -31,6 +34,7 @@ jobs:
           mkdir -p _site
           cp privacy-policy.html _site/index.html
           cp privacy-policy.html _site/privacy-policy.html
+          cp delete-account.html _site/delete-account.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
