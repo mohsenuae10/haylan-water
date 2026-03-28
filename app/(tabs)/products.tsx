@@ -1,4 +1,4 @@
-import { Text, View, TouchableOpacity, Dimensions, ActivityIndicator, FlatList, ScrollView } from "react-native";
+import { Text, View, TouchableOpacity, ActivityIndicator, FlatList, ScrollView, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -11,7 +11,6 @@ import { useEffect, useState } from "react";
 import type { Product, Category, ProductCategory } from "@/lib/supabase-types";
 
 const PRODUCT_IMAGE = require("@/assets/images/product-carton.png");
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const CATEGORY_ICONS: Record<string, string> = { water: "💧", tissues: "🧻" };
 
@@ -20,6 +19,9 @@ export default function ProductsScreen() {
   const { category: paramCategory } = useLocalSearchParams<{ category?: string }>();
   const colors = useColors();
   const { addToCart } = useAppStore();
+  const { width: screenWidth } = useWindowDimensions();
+  const numColumns = screenWidth >= 600 ? 3 : 2;
+  const cardWidth = (screenWidth - 16 * 2 - 12 * (numColumns - 1)) / numColumns;
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>("all");
@@ -52,7 +54,7 @@ export default function ProductsScreen() {
     return (
       <TouchableOpacity
         style={{
-          width: (SCREEN_WIDTH - 44) / 2,
+          width: cardWidth,
           backgroundColor: colors.surface,
           borderRadius: 16,
           overflow: "hidden",
@@ -187,10 +189,11 @@ export default function ProductsScreen() {
         </View>
       ) : (
         <FlatList
+          key={`grid-${numColumns}`}
           data={products}
           renderItem={renderProduct}
           keyExtractor={(item) => item.id.toString()}
-          numColumns={2}
+          numColumns={numColumns}
           columnWrapperStyle={{ gap: 12 }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 20 }}

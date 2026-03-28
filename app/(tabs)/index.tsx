@@ -1,4 +1,4 @@
-import { ScrollView, Text, View, TouchableOpacity, Dimensions, ActivityIndicator, FlatList } from "react-native";
+import { ScrollView, Text, View, TouchableOpacity, ActivityIndicator, FlatList, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -6,16 +6,13 @@ import { useColors } from "@/hooks/use-colors";
 import { getCategories, getFeaturedProducts, getBanners } from "@/lib/supabase";
 import { formatPrice } from "@/lib/validation";
 import { useAppStore } from "@/lib/store";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { FONT_FAMILY } from "@/lib/fonts";
 import type { Product, Category, Banner } from "@/lib/supabase-types";
 
 const LOGO_IMAGE = require("@/assets/images/haylan-logo.png");
 const PRODUCT_IMAGE = require("@/assets/images/product-carton.png");
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const BANNER_WIDTH = SCREEN_WIDTH - 32;
-const BANNER_HEIGHT = 200;
 const BANNER_INTERVAL = 4000; // Auto-slide every 4 seconds
 
 const CATEGORY_STYLES: Record<string, { bg: string; border: string; text: string; iconBg: string }> = {
@@ -29,6 +26,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
   const { addToCart } = useAppStore();
+  const { width: screenWidth } = useWindowDimensions();
+  const BANNER_WIDTH = screenWidth - 32;
+  const BANNER_HEIGHT = Math.max(200, screenWidth * 0.35);
+  const FEATURED_CARD_WIDTH = Math.max(160, screenWidth * 0.38);
   const [categories, setCategories] = useState<Category[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -66,9 +67,10 @@ export default function HomeScreen() {
   }, [banners.length]);
 
   const onBannerScroll = useCallback((event: any) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / BANNER_WIDTH);
+    const bw = event.nativeEvent.layoutMeasurement?.width || BANNER_WIDTH;
+    const index = Math.round(event.nativeEvent.contentOffset.x / bw);
     setActiveBannerIndex(index);
-  }, []);
+  }, [BANNER_WIDTH]);
 
   const handleBannerPress = (banner: Banner) => {
     if (banner.link_type === "category" && banner.link_value) {
@@ -271,7 +273,7 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     key={product.id}
                     style={{
-                      width: 160,
+                      width: FEATURED_CARD_WIDTH,
                       backgroundColor: colors.surface,
                       borderRadius: 14,
                       overflow: "hidden",
