@@ -1,16 +1,20 @@
-import { Text, View, TouchableOpacity, Alert, ScrollView } from "react-native";
+import { Text, View, TouchableOpacity, Alert, ScrollView, ActivityIndicator } from "react-native";
+import { useState } from "react";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useAppStore } from "@/lib/store";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { FONT_FAMILY } from "@/lib/fonts";
+import { deleteAccount } from "@/lib/supabase";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const colors = useColors();
   const { state, logout } = useAppStore();
   const user = state.user;
+
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -28,6 +32,36 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "حذف الحساب",
+      "هل أنت متأكد من حذف حسابك؟ سيتم حذف جميع بياناتك وطلباتك نهائياً ولا يمكن استرجاعها.",
+      [
+        { text: "إلغاء", style: "cancel" },
+        {
+          text: "حذف الحساب",
+          style: "destructive",
+          onPress: () => confirmDeleteAccount(),
+        },
+      ]
+    );
+  };
+
+  const confirmDeleteAccount = async () => {
+    if (!user?.id || !user?.phone) return;
+    setIsDeleting(true);
+    try {
+      await deleteAccount(user.id, user.phone);
+      logout();
+      router.replace("/(tabs)" as any);
+      Alert.alert("تم الحذف", "تم حذف حسابك وجميع بياناتك بنجاح.");
+    } catch (error: any) {
+      Alert.alert("خطأ", "حدث خطأ أثناء حذف الحساب. يرجى المحاولة مرة أخرى.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -107,6 +141,31 @@ export default function ProfileScreen() {
               <Text style={{ fontFamily: FONT_FAMILY.semiBold, fontSize: 15, color: colors.error }}>
                 تسجيل الخروج
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={{
+                borderRadius: 14,
+                padding: 16,
+                marginTop: 10,
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 8,
+                borderWidth: 1,
+                borderColor: colors.error + "40",
+              }}
+              onPress={handleDeleteAccount}
+              activeOpacity={0.7}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color={colors.error} />
+              ) : (
+                <Text style={{ fontFamily: FONT_FAMILY.regular, fontSize: 13, color: colors.error + "99" }}>
+                  حذف الحساب
+                </Text>
+              )}
             </TouchableOpacity>
           </>
         ) : (

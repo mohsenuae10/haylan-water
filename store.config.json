@@ -1,27 +1,56 @@
 {
-  "expo": {
-    "ios": {
-      "metaData": {
-        "default": {
-          "locale": "ar-SA"
-        },
-        "locales": {
-          "ar-SA": {
-            "title": "مجموعة هيلان",
-            "subtitle": "توصيل المياه",
-            "description": "تطبيق مجموعة هيلان لطلب وتوصيل المياه. يتيح لك التطبيق طلب المياه بسهولة وتتبع طلباتك.",
-            "keywords": ["مياه", "توصيل", "هيلان", "طلب", "مياه منزلية"],
-            "releaseNotes": "تحسينات على الأداء وإصلاح الأخطاء"
-          },
-          "en-US": {
-            "title": "Haylan Group",
-            "subtitle": "Water Delivery",
-            "description": "Haylan Group app for ordering and delivering water. The app allows you to easily order water and track your orders.",
-            "keywords": ["water", "delivery", "haylan", "order", "home water"],
-            "releaseNotes": "Performance improvements and bug fixes"
-          }
-        }
+  "configVersion": 0,
+  "apple": {
+    "copyright": "2024 Haylan Group",
+    "categories": ["FOOD_AND_DRINK", "LIFESTYLE"],
+    "info": {
+      "en-US": {
+        "title": "Haylan Group",
+        "subtitle": "Water Delivery",
+        "description": "Haylan Group app for ordering and delivering water. The app allows you to easily order water and track your orders in real-time. Enjoy fast and reliable delivery service to your home or office.",
+        "keywords": ["water", "delivery", "haylan", "order", "home water", "drinking water", "water delivery"],
+        "releaseNotes": "Performance improvements and bug fixes",
+        "privacyPolicyUrl": "https://mohsenuae10.github.io/haylan-water/privacy-policy.html",
+        "supportUrl": "https://mohsenuae10.github.io/haylan-water/privacy-policy.html",
+        "marketingUrl": "https://mohsenuae10.github.io/haylan-water/"
+      },
+      "ar-SA": {
+        "title": "مجموعة هيلان",
+        "subtitle": "توصيل المياه",
+        "description": "تطبيق مجموعة هيلان لطلب وتوصيل المياه. يتيح لك التطبيق طلب المياه بسهولة وتتبع طلباتك في الوقت الفعلي. استمتع بخدمة توصيل سريعة وموثوقة لمنزلك أو مكتبك.",
+        "keywords": ["مياه", "توصيل", "هيلان", "طلب", "مياه منزلية", "مياه شرب", "توصيل منزلي"],
+        "releaseNotes": "تحسينات على الأداء وإصلاح الأخطاء",
+        "privacyPolicyUrl": "https://mohsenuae10.github.io/haylan-water/privacy-policy.html",
+        "supportUrl": "https://mohsenuae10.github.io/haylan-water/privacy-policy.html",
+        "marketingUrl": "https://mohsenuae10.github.io/haylan-water/"
       }
+    },
+    "advisory": {
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gamblingSimulated": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "unrestrictedWebAccess": false,
+      "gambling": false,
+      "kidsAgeBand": null,
+      "seventeenPlus": false,
+      "ageRatingOverride": "NONE",
+      "koreaAgeRatingOverride": "NONE",
+      "lootBox": false
+    },
+    "review": {
+      "firstName": "Mohsen",
+      "lastName": "Haylan",
+      "email": "alkurbi2013@gmail.com",
+      "phone": "+971000000000"
     }
   }
 }

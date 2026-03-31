@@ -107,6 +107,58 @@ export async function signOut() {
 }
 
 /**
+ * Delete the current user's account and all associated data.
+ * Removes profile, orders, order items, notifications, and then signs out.
+ * Note: The auth.users record requires a Supabase Edge Function or
+ * database trigger with service_role to fully remove.
+ */
+export async function deleteAccount(userId: string, phone: string) {
+  // 1. Delete notifications for this user
+  await supabase
+    .from("notifications")
+    .delete()
+    .eq("customer_phone", phone);
+
+  // 2. Get all orders by this phone to delete their items
+  const { data: orders } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("customer_phone", phone);
+
+  if (orders && orders.length > 0) {
+    const orderIds = orders.map((o) => o.id);
+    // 3. Delete order items
+    await supabase
+      .from("order_items")
+      .delete()
+      .in("order_id", orderIds);
+
+    // 4. Delete orders
+    await supabase
+      .from("orders")
+      .delete()
+      .eq("customer_phone", phone);
+  }
+
+  // 5. Delete customer record
+  await supabase
+    .from("customers")
+    .delete()
+    .eq("phone", phone);
+
+  // 6. Delete profile
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .delete()
+    .eq("id", userId);
+
+  if (profileError) throw new Error(profileError.message);
+
+  // 7. Sign out
+  await supabase.auth.signOut();
+}
+
+/**
  * Get current session.
  */
 export async function getSession() {
